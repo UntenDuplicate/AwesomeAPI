@@ -112,37 +112,6 @@ public class SkillTrackerPane {
 
             bar.styleProperty().set(css);
 
-            /*if(progress < .1){
-                bar.styleProperty().set("-fx-accent: darkred");
-            }
-            else if(progress < .2){
-                bar.styleProperty().set("-fx-accent: red");
-            }
-            else if(progress < .3){
-                bar.styleProperty().set("-fx-accent: crimson");
-            }
-            else if(progress < .4){
-                bar.styleProperty().set("-fx-accent: darkorange");
-            }
-            else if(progress < .5){
-                bar.styleProperty().set("-fx-accent: gold");
-            }
-            else if(progress < .6){
-                bar.styleProperty().set("-fx-accent: yellow");
-            }
-            else if(progress < .7){
-                bar.styleProperty().set("-fx-accent: yellowgreen");
-            }
-            else if(progress < .8){
-                bar.styleProperty().set("-fx-accent: greenyellow");
-            }
-            else if(progress < .9){
-                bar.styleProperty().set("-fx-accent: limegreen");
-            }
-            else if(progress < 1){
-                bar.styleProperty().set("-fx-accent: green");
-            }
-            */
             bar.setMaxWidth(Double.MAX_VALUE); // allows the progress bar to expand to fill available horizontal space.
 
             bar.setMinHeight(27);
@@ -171,29 +140,6 @@ public class SkillTrackerPane {
                     bar.setProgress(progress);
                     String css = "-fx-accent: rgb(" + ((double)1-progress) * 255 + ", " + progress * 255 + ", 0)";
                     bar.styleProperty().set(css);
-                    /*
-                    if (progress < .1) {
-                        bar.styleProperty().set("-fx-accent: darkred");
-                    } else if (progress < .2) {
-                        bar.styleProperty().set("-fx-accent: red");
-                    } else if (progress < .3) {
-                        bar.styleProperty().set("-fx-accent: crimson");
-                    } else if (progress < .4) {
-                        bar.styleProperty().set("-fx-accent: darkorange");
-                    } else if (progress < .5) {
-                        bar.styleProperty().set("-fx-accent: gold");
-                    } else if (progress < .6) {
-                        bar.styleProperty().set("-fx-accent: yellow");
-                    } else if (progress < .7) {
-                        bar.styleProperty().set("-fx-accent: yellowgreen");
-                    } else if (progress < .8) {
-                        bar.styleProperty().set("-fx-accent: greenyellow");
-                    } else if (progress < .9) {
-                        bar.styleProperty().set("-fx-accent: limegreen");
-                    } else if (progress < 1) {
-                        bar.styleProperty().set("-fx-accent: green");
-                    }
-                    */
                 }
             }
         }
