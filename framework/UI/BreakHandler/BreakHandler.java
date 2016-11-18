@@ -1,4 +1,4 @@
-package com.BreakHandler;
+package com.AwesomeAPI.framework.UI.BreakHandler;
 
 import com.runemate.game.api.client.ClientUI;
 import com.runemate.game.api.hybrid.util.StopWatch;

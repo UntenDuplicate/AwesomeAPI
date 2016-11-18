@@ -1,6 +1,6 @@
-package com.SkillTrackerPane;
+package com.AwesomeAPI.framework.UI.SkillTrackerPane;
 
-import com.BreakHandler.BreakHandler;
+import com.AwesomeAPI.framework.UI.BreakHandler.BreakHandler;
 import com.runemate.game.api.hybrid.local.Skill;
 import com.runemate.game.api.hybrid.util.StopWatch;
 import com.runemate.game.api.script.framework.AbstractBot;
