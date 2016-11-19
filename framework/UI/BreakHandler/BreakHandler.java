@@ -75,6 +75,7 @@ public class BreakHandler {
      */
     public static boolean checkValid(String time) {
         if (!time.matches("^\\d{2}:\\d{2}:\\d{2}$")) {
+            System.out.println("Sent");
             ClientUI.sendTrayNotification("Time is not in correct format, Ex (00:00:00)");
             return false;
         }
@@ -130,9 +131,7 @@ public class BreakHandler {
             }
         }
         if (numOfColons != 2) {
-            ClientUI.sendTrayNotification("Time is not in correct format, Ex (00:00:00)");
         } else if (!checkValid(runtime)) {
-            ClientUI.sendTrayNotification("Time is not in correct format, Ex (00:00:00)");
         } else {
             converted = Integer.parseInt(runtime.substring(0, runtime.indexOf(':'))) * 3600000
                     + Integer.parseInt(runtime.substring(runtime.indexOf(':') + 1, runtime.lastIndexOf(':'))) * 60000
