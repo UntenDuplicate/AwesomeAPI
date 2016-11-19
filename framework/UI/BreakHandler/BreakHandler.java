@@ -4,7 +4,6 @@ import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
-import com.runemate.game.api.client.ClientUI;
 import com.runemate.game.api.hybrid.Environment;
 import com.runemate.game.api.hybrid.util.StopWatch;
 import com.runemate.game.api.hybrid.util.calculations.Random;
@@ -18,7 +17,10 @@ import javafx.scene.control.ListView;
 import javafx.scene.control.TableColumn;
 import javafx.scene.control.TextField;
 
-import java.io.*;
+import java.io.File;
+import java.io.FileReader;
+import java.io.FileWriter;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
@@ -76,7 +78,6 @@ public class BreakHandler {
     public static boolean checkValid(String time) {
         if (!time.matches("^\\d{2}:\\d{2}:\\d{2}$")) {
             System.out.println("Sent");
-            ClientUI.sendTrayNotification("Time is not in correct format, Ex (00:00:00)");
             return false;
         }
         return true;
