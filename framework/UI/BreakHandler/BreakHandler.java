@@ -231,7 +231,66 @@ public class BreakHandler {
     /**
      * Created by Matthew on 11/18/2016.
      */
-    //I will add commments to this later. Too tired rn
+
+    /*
+    Here is how to add this properly to your UI controller
+
+    Objects to delare as named in your UI.fxml
+    |
+    v
+    @FXML
+    private TableView<BreakHandler.BreakTracker> TV_BreakHandler;
+    @FXML
+    private TableColumn<BreakHandler.BreakTracker, String> TC_Start, TC_Duration, TC_End;
+
+    If you are going to use the save/load options as well, add these also:
+    |
+    v
+    @FXML
+    private Button BN_Load, BN_Generate, BN_Clear, BN_Save, BN_Delete;
+
+    @FXML
+    private ComboBox<String> CB_Profile;
+
+    @FXML
+    private TextField TF_ProfName;
+
+    This is not @FXML
+    private ObservableList<BreakHandler.BreakTracker> breakTracker = FXCollections.observableArrayList();
+
+    In Initialize() put these:
+        |
+        v
+        TC_Start.setCellFactory(TextFieldTableCell.forTableColumn());
+        TC_Duration.setCellFactory(TextFieldTableCell.forTableColumn());
+        TC_End.setCellFactory(TextFieldTableCell.forTableColumn());
+        TV_BreakHandler.setItems(breakTracker);
+
+        TC_Start.setEditable(true);
+        TC_Duration.setEditable(true);
+        TC_End.setEditable(true);
+
+        TC_Start.setOnEditCommit(BreakHandler.tableFillInTimes(breakTracker));
+        TC_Duration.setOnEditCommit(BreakHandler.tableFillInTimes(breakTracker));
+        TC_End.setOnEditCommit(BreakHandler.tableFillInTimes(breakTracker));
+
+        TV_BreakHandler.getItems().addAll(new BreakHandler.BreakTracker("", "", ""), new BreakHandler.BreakTracker("", "", ""));
+
+        TC_Start.setCellValueFactory(param -> param.getValue().startTimeProperty());
+        TC_Duration.setCellValueFactory(param -> param.getValue().durationProperty());
+        TC_End.setCellValueFactory(param -> param.getValue().endProperty());
+
+        If you have all the buttons also, use these in Initialize():
+        |
+        v
+        CB_Profile.getItems().addAll(BreakHandler.loadProfs(bot));
+        BN_Generate.setOnAction(BreakHandler.generateBreaks(breakTracker));
+        BN_Clear.setOnAction(BreakHandler.clearBreaks(breakTracker));
+        BN_Load.setOnAction(BreakHandler.loadBreaks(breakTracker, CB_Profile, bot));
+        BN_Save.setOnAction(BreakHandler.saveBreaks(breakTracker, TF_ProfName, CB_Profile, bot));
+        BN_Delete.setOnAction(BreakHandler.deleteProf(CB_Profile, bot));
+        */
+
     public static class BreakTracker {
 
         private final StringProperty startTime;
