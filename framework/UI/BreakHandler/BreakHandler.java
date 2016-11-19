@@ -2,6 +2,13 @@ package com.AwesomeAPI.framework.UI.BreakHandler;
 
 import com.runemate.game.api.client.ClientUI;
 import com.runemate.game.api.hybrid.util.StopWatch;
+import javafx.beans.property.SimpleStringProperty;
+import javafx.beans.property.StringProperty;
+import javafx.event.EventHandler;
+import javafx.scene.control.ListView;
+import javafx.scene.control.TableColumn;
+
+import java.util.List;
 
 /**
  * Created by Matthew on 11/15/2016.
@@ -42,6 +49,7 @@ public class BreakHandler {
                 }
             }
         }
+        System.out.println(breaking);
         return breaking;
     }
 
@@ -52,7 +60,7 @@ public class BreakHandler {
      * @return True if the format contains the ":"s and appropriate numbers with no other characters.
      */
     public static boolean checkValid(String time){
-        if(!time.matches("[0-9]+:+[0-9]+:+[0-9]+")){
+        if(!time.matches("^\\d{2}:\\d{2}:\\d{2}$")){
             ClientUI.sendTrayNotification("Time is not in correct format, Ex (00:00:00)");
             return false;
         }
@@ -156,5 +164,148 @@ public class BreakHandler {
         }
 
         return breakTime1;
+    }
+
+    /**
+     * An EventHandler that will fill in the different ListViews you have for your break handler.
+     * I wish i knew how to use TableView :( .
+     *
+     * @param LV_Start A ListView for the start times.
+     * @param LV_Duration A ListView for the Durations.
+     * @param LV_End A ListView for the ends.
+     * @return An EventHandler that will execute the event whenever someone edits the ListView this is added to.
+     */
+    public static EventHandler<ListView.EditEvent<String>> listViewFillInTimes(ListView<String> LV_Start, ListView<String> LV_Duration, ListView<String> LV_End) {
+        return event -> {
+            event.getSource().getItems().set(event.getIndex(), event.getNewValue());
+            System.out.println("Edited :D");
+            String time;
+            int row;
+            String time1;
+            if (event.getSource().getId().equals("LV_Start")) {
+                System.out.println("TC_Start :D");
+                row = event.getIndex();
+                if (!(time = LV_Duration.getItems().get(row)).isEmpty()) {
+                    time1 = event.getSource().getItems().get(row);
+                    System.out.println("Time: " + time + " row: " + row + " Time1: " + time1);
+                    LV_End.getItems().set(row, BreakHandler.getEnd(time, time1));
+                } else if (!(time = LV_End.getItems().get(row)).isEmpty()) {
+                    time1 = event.getSource().getItems().get(row);
+                    LV_Duration.getItems().set(row, BreakHandler.getDuration(time, time1));
+                }
+            } else if (event.getSource().getId().equals("LV_Duration")) {
+                row = event.getIndex();
+                if (!(time = LV_Start.getItems().get(row)).isEmpty()) {
+                    time1 = event.getSource().getItems().get(row);
+                    LV_End.getItems().set(row, BreakHandler.getEnd(time, time1));
+                } else if (!(time = LV_End.getItems().get(row)).isEmpty()) {
+                    time1 = event.getSource().getItems().get(row);
+                    LV_Start.getItems().set(row, BreakHandler.getStart(time1, time));
+                }
+            } else if (event.getSource().getId().equals("LV_End")) {
+                row = event.getIndex();
+                if (!(time = LV_Duration.getItems().get(row)).isEmpty()) {
+                    time1 = event.getSource().getItems().get(row);
+                    LV_Start.getItems().set(row, BreakHandler.getStart(time, time1));
+                } else if (!(time = LV_Start.getItems().get(row)).isEmpty()) {
+                    time1 = event.getSource().getItems().get(row);
+                    LV_Duration.getItems().set(row, BreakHandler.getDuration(time, time1));
+                }
+            }
+        };
+    }
+
+
+    /**
+     * Created by Matthew on 11/18/2016.
+     */
+    public static class BreakTracker {
+
+        private final StringProperty startTime;
+        private final StringProperty duration;
+        private final StringProperty endTime;
+
+        public BreakTracker(String startTime, String duration, String endTime){
+            this.startTime = new SimpleStringProperty(startTime);
+            this.endTime = new SimpleStringProperty(endTime);
+            this.duration = new SimpleStringProperty(duration);
+        }
+
+        public String getStartTime(){
+            return startTime.get();
+        }
+
+        public String getDuration(){
+            return duration.get();
+        }
+
+        public String getEndTime(){
+            return endTime.get();
+        }
+
+        public void setStartTime(String time){
+            startTime.set(time);
+        }
+
+        public void setDuration(String time){
+            duration.set(time);
+        }
+
+        public void setEndTime(String time){
+            endTime.set(time);
+        }
+
+        public StringProperty startTimeProperty() {
+            return startTime;
+        }
+
+        public StringProperty durationProperty(){
+            return duration;
+        }
+
+        public StringProperty endProperty(){
+            return endTime;
+        }
+
+    }
+
+    public static EventHandler<TableColumn.CellEditEvent<BreakTracker, String>> tableFillInTimes(List<BreakTracker> breakTracker) {
+        return event -> {
+            String time;
+            int row;
+            int col;
+            String time1;
+            time = event.getNewValue();
+            if(BreakHandler.checkValid(time)) {
+                row = event.getTablePosition().getRow();
+                System.out.println(row);
+                col = event.getTablePosition().getColumn();
+                if (breakTracker.size() - 1 <= row) {
+                    breakTracker.add(new BreakTracker("", "", ""));
+                }
+                if (col == 0) { //Start time
+                    breakTracker.get(row).setStartTime(event.getNewValue());
+                    if (!(time1 = breakTracker.get(row).endProperty().get()).isEmpty()) {
+                        breakTracker.get(row).setDuration(BreakHandler.getDuration(time, time1));
+                    } else if (!(time1 = breakTracker.get(row).durationProperty().get()).isEmpty()) {
+                        breakTracker.get(row).setEndTime(BreakHandler.getEnd(time, time1));
+                    }
+                } else if (col == 1) { //Duration
+                    breakTracker.get(row).setDuration(event.getNewValue());
+                    if (!(time1 = breakTracker.get(row).endProperty().get()).isEmpty()) {
+                        breakTracker.get(row).setStartTime(BreakHandler.getStart(time, time1));
+                    } else if (!(time1 = breakTracker.get(row).startTimeProperty().get()).isEmpty()) {
+                        breakTracker.get(row).setEndTime(BreakHandler.getEnd(time1, time));
+                    }
+                } else {
+                    breakTracker.get(row).setEndTime(event.getNewValue());
+                    if (!(time1 = breakTracker.get(row).startTimeProperty().get()).isEmpty()) {
+                        breakTracker.get(row).setDuration(BreakHandler.getDuration(time1, time));
+                    } else if (!(time1 = breakTracker.get(row).durationProperty().get()).isEmpty()) {
+                        breakTracker.get(row).setStartTime(BreakHandler.getStart(time1, time));
+                    }
+                }
+            }
+        };
     }
 }
