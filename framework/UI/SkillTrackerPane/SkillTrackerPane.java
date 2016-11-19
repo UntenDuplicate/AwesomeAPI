@@ -33,18 +33,18 @@ import static javafx.scene.layout.Region.USE_COMPUTED_SIZE;
  */
 public class SkillTrackerPane {
 
-    private static int level;
-    private static double progress;
-    public static List<ProgressIndicatorBar> skillBars = new ArrayList<>();
-    private static TitledPane pane;
-    public static List<Label> skillLabels = new ArrayList<>();
-    private static List<Label> expHourLabels = new ArrayList<>();
-    private static VBox AN_SkillTracker;
-    private static List<Label> timeLables = new ArrayList<>();
-    private static int expLeft;
-    private static int tempExp;
+    private int level;
+    private double progress;
+    public List<ProgressIndicatorBar> skillBars = new ArrayList<>();
+    private TitledPane pane;
+    public List<Label> skillLabels = new ArrayList<>();
+    private List<Label> expHourLabels = new ArrayList<>();
+    private VBox AN_SkillTracker;
+    private List<Label> timeLables = new ArrayList<>();
+    private int expLeft;
+    private int tempExp;
 
-    public static void createLabelUpdater(AbstractBot bot){
+    public void createLabelUpdater(AbstractBot bot){
         StopWatch watch = new StopWatch();
         watch.start();
         LoopingThread loopingThread = new LoopingThread(() -> {
@@ -66,7 +66,7 @@ public class SkillTrackerPane {
         loopingThread.start();
     }
 
-    public static void addSkillBar(AbstractBot bot, SkillEvent event, int i){
+    public void addSkillBar(AbstractBot bot, SkillEvent event, int i){
         try {
             level = bot.getPlatform().invokeAndWait(() -> event.getSkill().getBaseLevel());
             progress = bot.getPlatform().invokeAndWait(() -> (double)(100 - event.getSkill().getExperienceToNextLevelAsPercent())/100.0);
@@ -83,11 +83,11 @@ public class SkillTrackerPane {
         });
     }
 
-    public static void setAN_SkillTracker(VBox AN_SkillTracker) {
-        SkillTrackerPane.AN_SkillTracker = AN_SkillTracker;
+    public void setAN_SkillTracker(VBox AN_SkillTracker) {
+        this.AN_SkillTracker = AN_SkillTracker;
     }
 
-    public static class ProgressIndicatorBar extends StackPane {
+    public class ProgressIndicatorBar extends StackPane {
         final private int level;
         final private String skillName;
 
@@ -145,7 +145,7 @@ public class SkillTrackerPane {
         }
     }
 
-    public static void addSkillPane(int i) throws ExecutionException, InterruptedException, IOException {
+    public void addSkillPane(int i) throws ExecutionException, InterruptedException, IOException {
        pane = new TitledPane(null, null);
 
         pane.setMinSize(USE_COMPUTED_SIZE, USE_COMPUTED_SIZE);
