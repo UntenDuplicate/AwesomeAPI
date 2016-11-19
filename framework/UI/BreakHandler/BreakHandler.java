@@ -391,7 +391,7 @@ public class BreakHandler {
                     breakTracker.add(new BreakTracker(revertToString((startTime = convertToMilli(breakTracker.get(i - 1).getEndTime()) + 6 * Random.nextInt(900000, 3600001))),
                             revertToString((duration = 6 * Random.nextInt(450000, 3600001))), revertToString(startTime + duration)));
                 else
-                    breakTracker.add(new BreakTracker(revertToString(6 * Random.nextInt(900000, 3600001)),
+                    breakTracker.add(new BreakTracker(revertToString((startTime = 6 * Random.nextInt(900000, 3600001))),
                             revertToString((duration = 6 * Random.nextInt(450000, 3600001))), revertToString(startTime + duration)));
             }
         };

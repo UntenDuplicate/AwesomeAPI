@@ -101,7 +101,7 @@ public class SkillTrackerPane {
 
             text.setFont(Font.font("arial", FontWeight.EXTRA_BOLD, 16));
             //Setting the Stroke
-            text.setStrokeWidth(.5);
+            text.setStrokeWidth(.8);
 
             text.setFill(Color.GHOSTWHITE);
 
