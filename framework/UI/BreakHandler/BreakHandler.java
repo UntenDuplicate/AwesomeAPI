@@ -65,7 +65,6 @@ public class BreakHandler {
                 }
             }
         }
-        System.out.println(breaking);
         return breaking;
     }
 
