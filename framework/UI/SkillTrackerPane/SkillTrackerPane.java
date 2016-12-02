@@ -148,7 +148,7 @@ public class SkillTrackerPane {
     public void addSkillPane(int i) throws ExecutionException, InterruptedException, IOException {
        pane = new TitledPane(null, null);
 
-        pane.setMinSize(USE_COMPUTED_SIZE, USE_COMPUTED_SIZE);
+        pane.setPrefSize(USE_COMPUTED_SIZE, USE_COMPUTED_SIZE);
 
         ProgressIndicatorBar myBar = skillBars.get(i);
 
@@ -194,6 +194,6 @@ public class SkillTrackerPane {
 
         System.out.println("added");
 
-        myBar.prefWidthProperty().bind(pane.widthProperty().subtract(46));
+        myBar.prefWidthProperty().bind(pane.widthProperty().subtract(50));
     }
 }
