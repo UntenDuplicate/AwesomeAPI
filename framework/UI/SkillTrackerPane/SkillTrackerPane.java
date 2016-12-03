@@ -39,10 +39,11 @@ public class SkillTrackerPane {
     private TitledPane pane;
     public List<Label> skillLabels = new ArrayList<>();
     private List<Label> expHourLabels = new ArrayList<>();
-    private VBox AN_SkillTracker;
     private List<Label> timeLables = new ArrayList<>();
     private int expLeft;
     private int tempExp;
+    private VBox vBox = new VBox();
+
 
     public void createLabelUpdater(AbstractBot bot){
         StopWatch watch = new StopWatch();
@@ -66,6 +67,30 @@ public class SkillTrackerPane {
         loopingThread.start();
     }
 
+    public void updateLevels(SkillEvent event, AbstractBot bot) {
+        if (skillBars.isEmpty()) {
+            addSkillBar(bot, event, 0);
+        }
+
+        for (int i = 0; i < skillBars.size(); i++) {
+            if (skillBars.get(i).getSkill().equals(event.getSkill().toString())) {
+                System.out.println("Index: " + i + " Skill: " + event.getSkill());
+                try {
+                    level = bot.getPlatform().invokeAndWait(() -> event.getSkill().getBaseLevel());
+                    progress = bot.getPlatform().invokeAndWait(() -> (double) (100 - event.getSkill().getExperienceToNextLevelAsPercent()) / 100.0);
+                } catch (ExecutionException | InterruptedException e) {
+                    e.printStackTrace();
+                }
+                int finalI = i;
+                Platform.runLater(() -> skillBars.get(finalI).syncProgress(progress, level, (level - skillBars.get(finalI).getLevel())));
+                Platform.runLater(() -> skillLabels.get(finalI).setText(Integer.parseInt(skillLabels.get(finalI).getText()) + event.getChange() + ""));
+                break;
+            } else if (i == skillBars.size() - 1) {
+                addSkillBar(bot, event, i);
+            }
+        }
+    }
+
     public void addSkillBar(AbstractBot bot, SkillEvent event, int i){
         try {
             level = bot.getPlatform().invokeAndWait(() -> event.getSkill().getBaseLevel());
@@ -83,8 +108,9 @@ public class SkillTrackerPane {
         });
     }
 
-    public void setAN_SkillTracker(VBox AN_SkillTracker) {
-        this.AN_SkillTracker = AN_SkillTracker;
+    public void createSkillTracker(TitledPane AN_SkillTracker, AbstractBot bot) {
+        AN_SkillTracker.setContent(vBox);
+        createLabelUpdater(bot);
     }
 
     public class ProgressIndicatorBar extends StackPane {
@@ -146,7 +172,7 @@ public class SkillTrackerPane {
     }
 
     public void addSkillPane(int i) throws ExecutionException, InterruptedException, IOException {
-       pane = new TitledPane(null, null);
+        pane = new TitledPane(null, null);
 
         pane.setPrefSize(USE_COMPUTED_SIZE, USE_COMPUTED_SIZE);
 
@@ -186,11 +212,11 @@ public class SkillTrackerPane {
 
         pane.setContent(hbox);
 
-        AN_SkillTracker.getChildren().add(pane);
+        vBox.getChildren().add(pane);
 
         Separator separator2 = new Separator(Orientation.HORIZONTAL);
 
-        AN_SkillTracker.getChildren().add(separator2);
+        vBox.getChildren().add(separator2);
 
         System.out.println("added");
 

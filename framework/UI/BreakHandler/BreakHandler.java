@@ -10,17 +10,18 @@ import com.runemate.game.api.hybrid.util.calculations.Random;
 import com.runemate.game.api.script.framework.AbstractBot;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.beans.property.StringProperty;
+import javafx.collections.FXCollections;
+import javafx.collections.ObservableList;
 import javafx.event.ActionEvent;
 import javafx.event.EventHandler;
-import javafx.scene.control.ComboBox;
-import javafx.scene.control.ListView;
-import javafx.scene.control.TableColumn;
-import javafx.scene.control.TextField;
+import javafx.geometry.Orientation;
+import javafx.geometry.Pos;
+import javafx.scene.control.*;
+import javafx.scene.control.cell.TextFieldTableCell;
+import javafx.scene.layout.HBox;
+import javafx.scene.layout.VBox;
 
-import java.io.File;
-import java.io.FileReader;
-import java.io.FileWriter;
-import java.io.IOException;
+import java.io.*;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
@@ -38,22 +39,26 @@ import java.util.concurrent.ExecutionException;
  */
 public class BreakHandler {
 
+    private ObservableList<BreakTracker> breakTracker = FXCollections.observableArrayList();
+    private List<String> startTimes = new ArrayList<>();
+    private List<String> durationsL = new ArrayList<>();
+
+
     /**
      * Used to determine if a bot is breaking or not.
      *
-     * @param SbreakTimes A String array of startTimes.
-     * @param Sdurations  A String array of durations.
      * @param stopWatch   A StopWatch from the main bot to use to check times.
      * @return Boolean that is true when a break contains the current StopWatch time, false if none do.
      */
-    public static boolean isBreaking(String[] SbreakTimes, String[] Sdurations, StopWatch stopWatch) {
+    public boolean isBreaking(StopWatch stopWatch) {
+        checkBreaks();
         boolean breaking = false;
-        int breakTimes[] = new int[SbreakTimes.length];
-        int durations[] = new int[Sdurations.length];
+        int breakTimes[] = new int[startTimes.size()];
+        int durations[] = new int[durationsL.size()];
 
         for (int i = 0; i < breakTimes.length; i++) {
-            breakTimes[i] = convertToMilli(SbreakTimes[i]);
-            durations[i] = convertToMilli(Sdurations[i]);
+            breakTimes[i] = convertToMilli(startTimes.get(i));
+            durations[i] = convertToMilli(durationsL.get(i));
         }
         for (int i = 0; i < breakTimes.length; i++) {
             if (breakTimes[i] <= 0 || durations[i] <= 0) {
@@ -338,6 +343,99 @@ public class BreakHandler {
             return endTime;
         }
 
+    }
+
+    public void createBreakHandler(TitledPane pane, AbstractBot bot){
+
+        TableView<BreakTracker> TV_BreakHandler = new TableView<>();
+        TableColumn<BreakTracker, String> TC_Start = new TableColumn<>("Start");
+        TableColumn<BreakTracker, String> TC_Duration = new TableColumn<>("Duration");
+        TableColumn<BreakTracker, String> TC_End = new TableColumn<>("End");
+
+        TC_Start.setOnEditCommit(tableFillInTimes(breakTracker));
+        TC_Duration.setOnEditCommit(tableFillInTimes(breakTracker));
+        TC_End.setOnEditCommit(tableFillInTimes(breakTracker));
+
+        TC_Start.setCellFactory(TextFieldTableCell.forTableColumn());
+        TC_Duration.setCellFactory(TextFieldTableCell.forTableColumn());
+        TC_End.setCellFactory(TextFieldTableCell.forTableColumn());
+
+        TC_Start.setEditable(true);
+        TC_Duration.setEditable(true);
+        TC_End.setEditable(true);
+
+        TC_Start.setCellValueFactory(param -> param.getValue().startTimeProperty());
+        TC_Duration.setCellValueFactory(param -> param.getValue().durationProperty());
+        TC_End.setCellValueFactory(param -> param.getValue().endProperty());
+
+        TV_BreakHandler.getColumns().addAll(TC_Start, TC_Duration, TC_End);
+
+        TV_BreakHandler.setPrefHeight(200);
+
+        TV_BreakHandler.setEditable(true);
+
+        TV_BreakHandler.setItems(breakTracker);
+
+        TV_BreakHandler.getItems().addAll(new BreakTracker("", "", ""), new BreakTracker("", "", ""));
+
+        TV_BreakHandler.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY);
+
+        Separator separator = new Separator(Orientation.HORIZONTAL);
+
+        Button BN_Save = new Button("Save");
+
+        TextField TF_ProfName = new TextField();
+
+        Separator separator1 = new Separator(Orientation.VERTICAL);
+        separator1.setPrefWidth(200);
+
+        Button BN_Generate = new Button("Generate");
+
+        Button BN_Clear = new Button("Clear");
+
+        Separator separator2 = new Separator(Orientation.VERTICAL);
+        Separator separator3 = new Separator(Orientation.VERTICAL);
+
+        HBox hBox1 = new HBox(BN_Save, separator2, TF_ProfName, separator1, BN_Generate, separator3, BN_Clear);
+        hBox1.setAlignment(Pos.CENTER);
+
+        Button BN_Load = new Button("Load");
+
+        Separator separator4 = new Separator(Orientation.VERTICAL);
+
+        ComboBox<String> CB_Prof = new ComboBox<>();
+
+        Separator separator5 = new Separator(Orientation.VERTICAL);
+
+        Button BN_Delete = new Button("Delete");
+
+        HBox hBox2 = new HBox(BN_Load, separator4, CB_Prof, separator5, BN_Delete);
+        hBox2.setAlignment(Pos.CENTER);
+
+        VBox vBox = new VBox(TV_BreakHandler, separator, hBox1, hBox2);
+
+        pane.setContent(vBox);
+
+        CB_Prof.getItems().addAll(loadProfs(bot));
+        BN_Generate.setOnAction(generateBreaks(breakTracker));
+        BN_Clear.setOnAction(clearBreaks(breakTracker));
+        BN_Load.setOnAction(loadBreaks(breakTracker, CB_Prof, bot));
+        BN_Save.setOnAction(saveBreaks(breakTracker, TF_ProfName, CB_Prof, bot));
+        BN_Delete.setOnAction(deleteProf(CB_Prof, bot));
+
+    }
+
+
+    public void checkBreaks() {
+        BreakHandler.BreakTracker tracker;
+        startTimes.clear();
+        durationsL.clear();
+
+        for (int i = 0; i < breakTracker.size(); i++) {
+            tracker = breakTracker.get(i);
+            startTimes.add(i, tracker.getStartTime());
+            durationsL.add(i, tracker.getDuration());
+        }
     }
 
     public static EventHandler<TableColumn.CellEditEvent<BreakTracker, String>> tableFillInTimes(List<BreakTracker> breakTracker) {
