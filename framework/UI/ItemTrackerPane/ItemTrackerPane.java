@@ -77,6 +77,8 @@ public class ItemTrackerPane {
         vBox.setAlignment(Pos.CENTER_RIGHT);
 
         pane.setContent(vBox);
+
+        createItemProfitUpdater();
     }
 
     public void refreshItems(ItemEvent event) {

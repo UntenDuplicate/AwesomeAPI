@@ -236,64 +236,47 @@ public class BreakHandler {
      * Created by Matthew on 11/18/2016.
      */
 
+
     /*
-    Here is how to add this properly to your UI controller
+    In order to use this break handler, you must have a TitledPane in your UI
+    that is empty and create the following variables.
+     */
 
-    Objects to delare as named in your UI.fxml
-    |
-    v
-    @FXML
-    private TableView<BreakHandler.BreakTracker> TV_BreakHandler;
-    @FXML
-    private TableColumn<BreakHandler.BreakTracker, String> TC_Start, TC_Duration, TC_End;
-
-    If you are going to use the save/load options as well, add these also:
-    |
-    v
-    @FXML
-    private Button BN_Load, BN_Generate, BN_Clear, BN_Save, BN_Delete;
+    /*
+    Ex.
 
     @FXML
-    private ComboBox<String> CB_Profile;
+    private TitledPane TP_BreakHandler;
 
-    @FXML
-    private TextField TF_ProfName;
+    private final NameOfBot bot;
+    private BreakHandler breakHandlerClass = new BreakHandler();
+    private String userTime;
+    private LoopingThread loopingThread = new LoopingThread(() -> updateUI(), 500);
 
-    This is not @FXML
-    private ObservableList<BreakHandler.BreakTracker> breakTracker = FXCollections.observableArrayList();
+    @Override
+    public void initialize(URL location, ResourceBundle resources) {
+        breakHandlerClass.createBreakHandler(TP_BreakHandler, bot);
+        loopingThread.start();
+    }
 
-    In Initialize() put these:
-        |
-        v
-        TC_Start.setCellFactory(TextFieldTableCell.forTableColumn());
-        TC_Duration.setCellFactory(TextFieldTableCell.forTableColumn());
-        TC_End.setCellFactory(TextFieldTableCell.forTableColumn());
-        TV_BreakHandler.setItems(breakTracker);
+    private void updateUI() {
+        bot.isBreaking = breakHandlerClass.isBreaking(bot.watch);
 
-        TC_Start.setEditable(true);
-        TC_Duration.setEditable(true);
-        TC_End.setEditable(true);
+        if(!(userTime = TF_StopTime.getText()).equals("00:00:00") && BreakHandler.checkValid(userTime) && BreakHandler.convertToMilli(userTime) > 0){
+            if(bot.watch.getRuntime() >= BreakHandler.convertToMilli(userTime)){
+                GameEvents.OSRS.LOGIN_HANDLER.disable();
+                GameEvents.RS3.LOGIN_HANDLER.disable();
+                GameEvents.OSRS.LOBBY_HANDLER.disable();
+                GameEvents.RS3.LOBBY_HANDLER.disable();
+                while(Environment.getBot().isRunning() && RuneScape.isLoggedIn() && RuneScape.logout()){
+                    Execution.delayUntil(() -> !RuneScape.isLoggedIn(), 10000);
+                }
+                Environment.getBot().stop();
+            }
+        }
+    }
 
-        TC_Start.setOnEditCommit(BreakHandler.tableFillInTimes(breakTracker));
-        TC_Duration.setOnEditCommit(BreakHandler.tableFillInTimes(breakTracker));
-        TC_End.setOnEditCommit(BreakHandler.tableFillInTimes(breakTracker));
-
-        TV_BreakHandler.getItems().addAll(new BreakHandler.BreakTracker("", "", ""), new BreakHandler.BreakTracker("", "", ""));
-
-        TC_Start.setCellValueFactory(param -> param.getValue().startTimeProperty());
-        TC_Duration.setCellValueFactory(param -> param.getValue().durationProperty());
-        TC_End.setCellValueFactory(param -> param.getValue().endProperty());
-
-        If you have all the buttons also, use these in Initialize():
-        |
-        v
-        CB_Profile.getItems().addAll(BreakHandler.loadProfs(bot));
-        BN_Generate.setOnAction(BreakHandler.generateBreaks(breakTracker));
-        BN_Clear.setOnAction(BreakHandler.clearBreaks(breakTracker));
-        BN_Load.setOnAction(BreakHandler.loadBreaks(breakTracker, CB_Profile, bot));
-        BN_Save.setOnAction(BreakHandler.saveBreaks(breakTracker, TF_ProfName, CB_Profile, bot));
-        BN_Delete.setOnAction(BreakHandler.deleteProf(CB_Profile, bot));
-        */
+     */
 
     public static class BreakTracker {
 
