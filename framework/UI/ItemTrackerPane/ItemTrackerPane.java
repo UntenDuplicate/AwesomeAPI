@@ -104,7 +104,7 @@ public class ItemTrackerPane {
                         if (i == items.size() - 1) {
                             GrandExchange.Item exch;
                             int price = 0;
-                            if ((exch = GrandExchange.lookup(def.getId())) != null) {
+                            if (def.isTradeable() && (exch = GrandExchange.lookup(def.getId())) != null) {
                                 price = exch.getPrice();
                                 itemList.add(new item(name, price));
                             }
@@ -114,7 +114,7 @@ public class ItemTrackerPane {
                     if (items.size() == 0) {
                         GrandExchange.Item exch;
                         int price = 0;
-                        if ((exch = GrandExchange.lookup(def.getId())) != null) {
+                        if (def.isTradeable() && (exch = GrandExchange.lookup(def.getId())) != null) {
                             price = exch.getPrice();
                             itemList.add(new item(name, price));
                         }
@@ -146,7 +146,7 @@ public class ItemTrackerPane {
                         if (i == items.size() - 1) {
                             GrandExchange.Item exch;
                             int price = 0;
-                            if ((exch = GrandExchange.lookup(def.getId())) != null) {
+                            if (def.isTradeable() && (exch = GrandExchange.lookup(def.getId())) != null) {
                                 price = exch.getPrice();
                                 itemList.add(new item(name, price));
                             }
@@ -156,7 +156,7 @@ public class ItemTrackerPane {
                     if (items.size() == 0) {
                         GrandExchange.Item exch;
                         int price = 0;
-                        if ((exch = GrandExchange.lookup(def.getId())) != null) {
+                        if (def.isTradeable() && (exch = GrandExchange.lookup(def.getId())) != null) {
                             price = exch.getPrice();
                             itemList.add(new item(name, price));
                         }

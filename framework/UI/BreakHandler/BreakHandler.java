@@ -4,7 +4,6 @@ import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
-import com.runemate.game.api.hybrid.Environment;
 import com.runemate.game.api.hybrid.util.StopWatch;
 import com.runemate.game.api.hybrid.util.calculations.Random;
 import com.runemate.game.api.script.framework.AbstractBot;
@@ -21,11 +20,9 @@ import javafx.scene.control.cell.TextFieldTableCell;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
 
-import java.io.*;
 import java.util.ArrayList;
-import java.util.Iterator;
+import java.util.Collections;
 import java.util.List;
-import java.util.concurrent.ExecutionException;
 
 /**
  * Created by Matthew on 11/15/2016.
@@ -486,14 +483,21 @@ public class BreakHandler {
 
     public static EventHandler<ActionEvent> saveBreaks(List<BreakTracker> breakTracker, TextField profTF, ComboBox<String> profsBox, AbstractBot bot) {
         return event -> {
-            String path = "";
             String prof = profTF.getText();
             if(prof != null) {
                 profsBox.getItems().add(prof);
+                JsonArray allBreaks = new JsonArray();
                 JsonObject jBreaks = new JsonObject();
                 JsonArray listOfStarts = new JsonArray();
                 JsonArray listOfDurations = new JsonArray();
                 JsonArray listOfEnds = new JsonArray();
+
+                JsonParser parser = new JsonParser();
+                JsonElement name = parser.parse(prof);
+
+
+
+
                 for (int i = 0; i < breakTracker.size(); i++) {
                     listOfStarts.add(breakTracker.get(i).getStartTime());
                 }
@@ -507,31 +511,25 @@ public class BreakHandler {
                 jBreaks.add("Start", listOfStarts);
                 jBreaks.add("Duration", listOfDurations);
                 jBreaks.add("End", listOfEnds);
+                jBreaks.add("Name", name);
 
-                System.out.println(jBreaks);
 
-                try {
+                String value = bot.getSettings().getProperty("AwesomeBreaks");
 
-                    try {
-                        path = bot.getPlatform().invokeAndWait(() -> Environment.getStorageDirectory().getPath());
-                    } catch (ExecutionException | InterruptedException e) {
-                        e.printStackTrace();
+                System.out.println("Old Setting: " + value);
+
+                if(value != null) {
+                    JsonArray response = parser.parse(value).getAsJsonArray();
+                    for (int index = 0; index < response.size(); index++) {
+                        JsonObject jsonObject = (JsonObject) response.get(index);
+                        allBreaks.add(jsonObject);
                     }
-                    // Writing to a file
-                    System.out.println(prof);
-                    File file = new File(path + "\\" + prof + ".json");
-                    file.createNewFile();
-                    FileWriter fileWriter = new FileWriter(file);
-                    System.out.println("Writing JSON object to file");
-                    System.out.println("-----------------------");
-
-                    fileWriter.write(jBreaks.toString());
-                    fileWriter.flush();
-                    fileWriter.close();
-
-                } catch (IOException e) {
-                    e.printStackTrace();
                 }
+
+                allBreaks.add(jBreaks);
+                System.out.println("New: " + allBreaks);
+                bot.getSettings().setProperty("AwesomeBreaks", allBreaks.toString());
+                System.out.println("Saved");
             }
         };
     }
@@ -539,42 +537,34 @@ public class BreakHandler {
     public static EventHandler<ActionEvent> loadBreaks(List<BreakTracker> breakTracker, ComboBox<String> profName, AbstractBot bot) {
         return event -> {
             breakTracker.clear();
-            String path = "";
             String prof = profName.getSelectionModel().getSelectedItem();
 
-            try {
-                path = bot.getPlatform().invokeAndWait(() -> Environment.getStorageDirectory().getPath());
+            String value = bot.getSettings().getProperty("AwesomeBreaks");
 
-                JsonParser parser = new JsonParser();
+            JsonParser parser = new JsonParser();
 
-                Object obj = parser.parse(new FileReader(path + "\\" + prof + ".json"));
+            JsonArray array = parser.parse(value).getAsJsonArray();
 
-                JsonObject jsonObject = (JsonObject) obj;
+            JsonArray listOfStarts = new JsonArray();
 
-                System.out.println("Starts are :");
-                JsonArray listOfStarts = (JsonArray) jsonObject.get("Start");
-                Iterator<JsonElement> iterator = listOfStarts.iterator();
-                while (iterator.hasNext()) {
-                    System.out.println(iterator.next());
+            JsonObject obj = new JsonObject();
+
+            JsonArray listOfDurations = new JsonArray();
+
+            JsonArray listOfEnds = new JsonArray();
+
+            for(int i = 0; i < array.size(); i++){
+                if((obj = array.get(i).getAsJsonObject()).get("Name").getAsString().equals(prof)){
+                    System.out.println("Found Breaks");
+                    listOfStarts = obj.getAsJsonArray("Start");
+                    listOfDurations = obj.getAsJsonArray("Duration");
+                    listOfEnds = obj.getAsJsonArray("End");
+                    break;
                 }
-                System.out.println("Durations are :");
-                JsonArray listOfDurations = (JsonArray) jsonObject.get("Duration");
-                Iterator<JsonElement> iteratorD = listOfDurations.iterator();
-                while (iteratorD.hasNext()) {
-                    System.out.println(iteratorD.next());
-                }
-                System.out.println("Ends are :");
-                JsonArray listOfEnds = (JsonArray) jsonObject.get("End");
-                Iterator<JsonElement> iteratorE = listOfEnds.iterator();
-                while (iteratorE.hasNext()) {
-                    System.out.println(iteratorE.next());
-                }
+            }
 
-                for(int i = 0; i < listOfStarts.size(); i++){
-                    breakTracker.add(new BreakTracker(listOfStarts.get(i).getAsString(), listOfDurations.get(i).getAsString(), listOfEnds.get(i).getAsString()));
-                }
-            } catch (IOException | InterruptedException | ExecutionException e) {
-                e.printStackTrace();
+            for(int i = 0; i < listOfStarts.size(); i++){
+                breakTracker.add(new BreakTracker(listOfStarts.get(i).getAsString(), listOfDurations.get(i).getAsString(), listOfEnds.get(i).getAsString()));
             }
 
 
@@ -582,43 +572,51 @@ public class BreakHandler {
     }
 
     public static List<String> loadProfs(AbstractBot bot) {
-        List<String> results = new ArrayList<>();
-        String path = null;
-        try {
-            path = bot.getPlatform().invokeAndWait(() -> Environment.getStorageDirectory().getPath());
-        } catch (ExecutionException | InterruptedException e) {
-            e.printStackTrace();
-        }
-
-
-        File[] files = new File(path).listFiles((dir, name) -> name.endsWith(".json"));
-
-        for (File file : files) {
-            if (file.isFile()) {
-                results.add(file.getName().replace(".json", ""));
+        List<String> profs = new ArrayList<>();
+        String settings = bot.getSettings().getProperty("AwesomeBreaks");
+        System.out.println(settings);
+        if(settings != null) {
+            JsonParser parser = new JsonParser();
+            JsonArray obj = parser.parse(settings).getAsJsonArray();
+            for(int index = 0; index < obj.size(); index++) {
+                profs.add(obj.get(index).getAsJsonObject().get("Name").getAsString());
             }
+            System.out.println(profs);
+            return profs;
         }
-
-        return results;
+        System.out.println("Properties is empty");
+        return Collections.emptyList();
     }
 
     public static EventHandler<ActionEvent> deleteProf(ComboBox<String> cb_profile, AbstractBot bot) {
         return event -> {
-            String path = "";
-            try {
-                path = bot.getPlatform().invokeAndWait(() -> Environment.getStorageDirectory().getPath());
-            } catch (ExecutionException | InterruptedException e) {
-                e.printStackTrace();
-            }
-            String prof = cb_profile.getSelectionModel().getSelectedItem();
-            int index = cb_profile.getSelectionModel().getSelectedIndex();
-            if(prof != null) {
-                File file = new File(path + "\\" + prof + ".json");
-                if(file.delete()){
-                    System.out.println("Deleted Profile: " + prof);
-                    cb_profile.getItems().remove(index);
+            List<String> profs = cb_profile.getItems();
+
+            String name = cb_profile.getSelectionModel().getSelectedItem();
+
+            String settings = bot.getSettings().getProperty("AwesomeBreaks");
+
+            JsonParser parser = new JsonParser();
+
+            JsonArray array = parser.parse(settings).getAsJsonArray();
+
+            for(int i = 0; i < array.size(); i++){
+                if(array.get(i).getAsJsonObject().get("Name").getAsString().equals(name)){
+                    System.out.println("Removed");
+                    array.remove(i);
+                    break;
                 }
             }
+
+            for(int i = 0; i < profs.size(); i++){
+                if(profs.get(i).equals(name)){
+                    cb_profile.getItems().remove(i);
+                    System.out.println("Removed");
+                    break;
+                }
+            }
+
+            bot.getSettings().setProperty("AwesomeBreaks", array.toString());
         };
     }
 }

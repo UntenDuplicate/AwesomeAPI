@@ -2,7 +2,6 @@ package com.AwesomeAPI.game.Actions;
 
 import com.runemate.game.api.hybrid.entities.Player;
 import com.runemate.game.api.hybrid.location.Coordinate;
-import com.runemate.game.api.hybrid.location.navigation.Path;
 import com.runemate.game.api.hybrid.location.navigation.basic.BresenhamPath;
 import com.runemate.game.api.hybrid.location.navigation.cognizant.RegionPath;
 
@@ -14,41 +13,57 @@ import java.util.function.Predicate;
  */
 public class Actions {
 
-    private static Predicate<Coordinate> notReachable = coordinate -> !coordinate.isReachable();
+    private Coordinate prev;
 
-    public static boolean isAnimating(Player me){
+    private Predicate<Coordinate> notReachable = coordinate -> !coordinate.isReachable();
+
+    public boolean isAnimating(Player me){
         return me != null && me.getAnimationId() != -1;
     }
 
-    public static boolean walkToSpot(Coordinate spot){
-        Path path = null;
-        if(spot != null) {
-            path = RegionPath.buildTo(spot);
+    public boolean walkToSpot(Coordinate place){
+        RegionPath path = null;
+        if(prev == null || prev != place) {
+            prev = place;
+            if (place != null) {
+                path = RegionPath.buildTo(place);
+            }
         }
-        if(path != null)
-        return path.step();
-        else
-            return false;
-    }
-
-    public static boolean walkToSpotB(Coordinate spot){
-        Path path = null;
-        if(spot != null) {
-            path = BresenhamPath.buildTo(spot);
+        if(path != null && path.getNext() == null) {
+            path = RegionPath.buildTo(place);
         }
-        if(path != null)
+        if(path != null) {
             return path.step();
+        }
+        else
+            return false;
+    }
+
+    public boolean walkToSpotB(Coordinate place){
+        BresenhamPath path = null;
+        if(prev == null || prev != place) {
+            prev = place;
+            if (place != null) {
+                path = BresenhamPath.buildTo(place);
+            }
+        }
+        if(path != null && path.getNext() == null) {
+            path = BresenhamPath.buildTo(place);
+        }
+        if(path != null) {
+            return path.step();
+        }
         else
             return false;
     }
 
 
-    public static Coordinate getReachable(List<Coordinate> surroundingCoordinates) {
+    public Coordinate getReachable(List<Coordinate> surroundingCoordinates) {
         surroundingCoordinates.removeIf(notReachable);
         if(!surroundingCoordinates.isEmpty())
         return surroundingCoordinates.get(0);
         else{
-            return surroundingCoordinates.get(0);
+            return null;
         }
     }
 }

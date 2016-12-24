@@ -16,7 +16,6 @@ import javafx.scene.control.TitledPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
-import javafx.scene.paint.Color;
 import javafx.scene.text.Font;
 import javafx.scene.text.FontWeight;
 import javafx.scene.text.Text;
@@ -125,16 +124,9 @@ public class SkillTrackerPane {
             this.skillName = skillName;
 
 
-            text.setFont(Font.font("arial", FontWeight.EXTRA_BOLD, 16));
-            //Setting the Stroke
-            text.setStrokeWidth(.8);
+            text.setFont(Font.font("comic sans", FontWeight.EXTRA_BOLD, 16));
 
-            text.setFill(Color.GHOSTWHITE);
-
-            // Setting the stroke color
-            text.setStroke(Color.BLACK);
-
-            String css = "-fx-accent rgb(" + ((double)1-progress) * 255 + ", " + progress * 255 + ", 0)";
+            String css = "-fx-accent rgb(" + ((double)1 - progress) * 255 + ", " + progress * 255 + ", 0)";
 
             bar.styleProperty().set(css);
 
