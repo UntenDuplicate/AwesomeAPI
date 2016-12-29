@@ -167,6 +167,16 @@ public class ItemTrackerPane {
         }
     }
 
+    public int getNumOfItem(String item){
+        itemTracker temp;
+        for (itemTracker item1 : items) {
+            if ((temp = item1).getItemName().equals(item)) {
+                return Integer.parseInt(temp.getItemAmount());
+            }
+        }
+        return 0;
+    }
+
     public void createItemProfitUpdater(){
         StopWatch watch = new StopWatch();
         watch.start();
