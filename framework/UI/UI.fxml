@@ -21,11 +21,12 @@
       <Separator minHeight="-Infinity" />
       <TitledPane fx:id="TP_ItemTracker" animated="false" expanded="false" text="Item Tracker" />
       <Separator minHeight="-Infinity" />
-      <TitledPane fx:id="TP_Currently" animated="false" expanded="false" prefHeight="200.0" prefWidth="200.0" text="Currently: ">
+      <TitledPane fx:id="TP_Currently" animated="false" expanded="false" text="Currently: ">
          <content>
             <ListView fx:id="LV_CurrentTask" prefHeight="200.0" prefWidth="200.0" />
          </content>
       </TitledPane>
+      <Separator prefWidth="200.0" />
       <HBox alignment="CENTER" spacing="5.0">
          <children>
             <Label fx:id="LL_Runtime" text="Runtime:">
