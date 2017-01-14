@@ -212,6 +212,6 @@ public class SkillTrackerPane {
 
         System.out.println("added");
 
-        myBar.prefWidthProperty().bind(pane.widthProperty().subtract(50));
+        myBar.prefWidthProperty().bind(pane.widthProperty().subtract(55));
     }
 }

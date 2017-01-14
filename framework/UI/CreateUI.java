@@ -13,6 +13,7 @@ import com.runemate.game.api.script.framework.AbstractBot;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.control.Label;
+import javafx.scene.control.ListView;
 import javafx.scene.control.TextField;
 import javafx.scene.control.TitledPane;
 import javafx.scene.layout.HBox;
@@ -56,6 +57,11 @@ public class CreateUI extends VBox{
     @FXML
     private HBox HB_Setup;
 
+    @FXML
+    public ListView<String> LV_CurrentTask;
+
+    @FXML private TitledPane TP_Currently;
+
     public CreateUI(AbstractBot bot){
 
         FXMLLoader loader = new FXMLLoader();
@@ -76,6 +82,9 @@ public class CreateUI extends VBox{
         itemTrackerPane.createTableView(TP_ItemTracker);
         skillTrackerPane = new SkillTrackerPane();
         skillTrackerPane.createSkillTracker(TP_SkillTracker, bot);
+
+        setBotName(bot.getMetaData().getName());
+        setVersion(bot.getMetaData().getVersion());
     }
 
     public BreakHandler getBreakHandler(){

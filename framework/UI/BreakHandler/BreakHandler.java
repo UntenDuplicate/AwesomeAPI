@@ -36,10 +36,14 @@ import java.util.List;
  */
 public class BreakHandler {
 
+    TableView<BreakTracker> TV_BreakHandler;
+    TableColumn<BreakTracker, String> TC_Start;
+    TableColumn<BreakTracker, String> TC_Duration;
+    TableColumn<BreakTracker, String> TC_End;
+
     private ObservableList<BreakTracker> breakTracker = FXCollections.observableArrayList();
     private List<String> startTimes = new ArrayList<>();
     private List<String> durationsL = new ArrayList<>();
-
 
     /**
      * Used to determine if a bot is breaking or not.
@@ -327,10 +331,10 @@ public class BreakHandler {
 
     public void createBreakHandler(TitledPane pane, AbstractBot bot){
 
-        TableView<BreakTracker> TV_BreakHandler = new TableView<>();
-        TableColumn<BreakTracker, String> TC_Start = new TableColumn<>("Start");
-        TableColumn<BreakTracker, String> TC_Duration = new TableColumn<>("Duration");
-        TableColumn<BreakTracker, String> TC_End = new TableColumn<>("End");
+        TV_BreakHandler = new TableView<>();
+        TC_Start = new TableColumn<>("Start");
+        TC_Duration = new TableColumn<>("Duration");
+        TC_End = new TableColumn<>("End");
 
         TC_Start.setOnEditCommit(tableFillInTimes(breakTracker));
         TC_Duration.setOnEditCommit(tableFillInTimes(breakTracker));
@@ -364,6 +368,8 @@ public class BreakHandler {
 
         Button BN_Save = new Button("Save");
 
+        BN_Save.setTooltip(new Tooltip("You must enter a name \n to save in case you didn't."));
+
         TextField TF_ProfName = new TextField();
 
         Separator separator1 = new Separator(Orientation.VERTICAL);
@@ -381,6 +387,8 @@ public class BreakHandler {
 
         Button BN_Load = new Button("Load");
 
+        BN_Load.setTooltip(new Tooltip("You must select a previous break name \n before you can click load just so you know."));
+
         Separator separator4 = new Separator(Orientation.VERTICAL);
 
         ComboBox<String> CB_Prof = new ComboBox<>();
@@ -394,6 +402,7 @@ public class BreakHandler {
 
         VBox vBox = new VBox(TV_BreakHandler, separator, hBox1, hBox2);
 
+
         pane.setContent(vBox);
 
         CB_Prof.getItems().addAll(loadProfs(bot));
@@ -402,6 +411,10 @@ public class BreakHandler {
         BN_Load.setOnAction(loadBreaks(breakTracker, CB_Prof, bot));
         BN_Save.setOnAction(saveBreaks(breakTracker, TF_ProfName, CB_Prof, bot));
         BN_Delete.setOnAction(deleteProf(CB_Prof, bot));
+
+        Tooltip tooltip = new Tooltip("Press enter after typing your break \n to have it save.");
+        TV_BreakHandler.setTooltip(tooltip);
+
 
     }
 
@@ -486,6 +499,7 @@ public class BreakHandler {
             String prof = profTF.getText();
             if(prof != null) {
                 profsBox.getItems().add(prof);
+                prof = prof.replaceAll(" ", "~");
                 JsonArray allBreaks = new JsonArray();
                 JsonObject jBreaks = new JsonObject();
                 JsonArray listOfStarts = new JsonArray();
@@ -494,6 +508,7 @@ public class BreakHandler {
 
                 JsonParser parser = new JsonParser();
                 JsonElement name = parser.parse(prof);
+                System.out.println(name);
 
 
 
@@ -539,35 +554,39 @@ public class BreakHandler {
             breakTracker.clear();
             String prof = profName.getSelectionModel().getSelectedItem();
 
+            prof = prof.replaceAll(" ", "~");
+
             String value = bot.getSettings().getProperty("AwesomeBreaks");
 
-            JsonParser parser = new JsonParser();
+            if(value != null) {
 
-            JsonArray array = parser.parse(value).getAsJsonArray();
+                JsonParser parser = new JsonParser();
 
-            JsonArray listOfStarts = new JsonArray();
+                JsonArray array = parser.parse(value).getAsJsonArray();
 
-            JsonObject obj = new JsonObject();
+                JsonArray listOfStarts = new JsonArray();
 
-            JsonArray listOfDurations = new JsonArray();
+                JsonObject obj = new JsonObject();
 
-            JsonArray listOfEnds = new JsonArray();
+                JsonArray listOfDurations = new JsonArray();
 
-            for(int i = 0; i < array.size(); i++){
-                if((obj = array.get(i).getAsJsonObject()).get("Name").getAsString().equals(prof)){
-                    System.out.println("Found Breaks");
-                    listOfStarts = obj.getAsJsonArray("Start");
-                    listOfDurations = obj.getAsJsonArray("Duration");
-                    listOfEnds = obj.getAsJsonArray("End");
-                    break;
+                JsonArray listOfEnds = new JsonArray();
+
+                for (int i = 0; i < array.size(); i++) {
+                    if ((obj = array.get(i).getAsJsonObject()).get("Name").getAsString().equals(prof)) {
+                        System.out.println("Found Breaks");
+                        listOfStarts = obj.getAsJsonArray("Start");
+                        listOfDurations = obj.getAsJsonArray("Duration");
+                        listOfEnds = obj.getAsJsonArray("End");
+                        break;
+                    }
                 }
+
+                for (int i = 0; i < listOfStarts.size(); i++) {
+                    breakTracker.add(new BreakTracker(listOfStarts.get(i).getAsString(), listOfDurations.get(i).getAsString(), listOfEnds.get(i).getAsString()));
+                }
+
             }
-
-            for(int i = 0; i < listOfStarts.size(); i++){
-                breakTracker.add(new BreakTracker(listOfStarts.get(i).getAsString(), listOfDurations.get(i).getAsString(), listOfEnds.get(i).getAsString()));
-            }
-
-
         };
     }
 
@@ -579,7 +598,8 @@ public class BreakHandler {
             JsonParser parser = new JsonParser();
             JsonArray obj = parser.parse(settings).getAsJsonArray();
             for(int index = 0; index < obj.size(); index++) {
-                profs.add(obj.get(index).getAsJsonObject().get("Name").getAsString());
+                String names = obj.get(index).getAsJsonObject().get("Name").getAsString().replaceAll("~", " ");
+                profs.add(names);
             }
             System.out.println(profs);
             return profs;
