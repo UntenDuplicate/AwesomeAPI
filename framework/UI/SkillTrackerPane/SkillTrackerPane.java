@@ -62,15 +62,19 @@ public class SkillTrackerPane {
                 int finalI = i;
                 Platform.runLater(() -> expHourLabels.get(finalI).setText(Math.round(Integer.parseInt(skillLabels.get(finalI).getText())/((double)watch.getRuntime()/3600000)) + ""));
                 Platform.runLater(() -> {
-                    if(RuneScape.isLoggedIn()) {
-                        try {
-                            expLeft = bot.getPlatform().invokeAndWait(() -> Skill.valueOf(skillBars.get(finalI).getSkill().toUpperCase()).getExperienceToNextLevel());
-                            if (expLeft > 0)
-                                tempExp = expLeft;
-                            timeLables.get(finalI).setText(BreakHandler.revertToString((int) (3600000 * (((double) (tempExp) / Integer.parseInt(expHourLabels.get(finalI).getText()))))));
-                        } catch (ExecutionException | InterruptedException e) {
-                            e.printStackTrace();
+                    try {
+                        if(bot.getPlatform().invokeAndWait(() -> RuneScape.isLoggedIn())) {
+                            try {
+                                expLeft = bot.getPlatform().invokeAndWait(() -> Skill.valueOf(skillBars.get(finalI).getSkill().toUpperCase()).getExperienceToNextLevel());
+                                if (expLeft > 0)
+                                    tempExp = expLeft;
+                                timeLables.get(finalI).setText(BreakHandler.revertToString((int) (3600000 * (((double) (tempExp) / Integer.parseInt(expHourLabels.get(finalI).getText()))))));
+                            } catch (ExecutionException | InterruptedException e) {
+                                e.printStackTrace();
+                            }
                         }
+                    } catch (ExecutionException | InterruptedException e) {
+                        e.printStackTrace();
                     }
                 });
             }
