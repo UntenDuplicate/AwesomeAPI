@@ -554,38 +554,41 @@ public class BreakHandler {
             breakTracker.clear();
             String prof = profName.getSelectionModel().getSelectedItem();
 
-            prof = prof.replaceAll(" ", "~");
+            if (prof != null) {
 
-            String value = bot.getSettings().getProperty("AwesomeBreaks");
+                prof = prof.replaceAll(" ", "~");
 
-            if(value != null) {
+                String value = bot.getSettings().getProperty("AwesomeBreaks");
 
-                JsonParser parser = new JsonParser();
+                if (value != null) {
 
-                JsonArray array = parser.parse(value).getAsJsonArray();
+                    JsonParser parser = new JsonParser();
 
-                JsonArray listOfStarts = new JsonArray();
+                    JsonArray array = parser.parse(value).getAsJsonArray();
 
-                JsonObject obj = new JsonObject();
+                    JsonArray listOfStarts = new JsonArray();
 
-                JsonArray listOfDurations = new JsonArray();
+                    JsonObject obj = new JsonObject();
 
-                JsonArray listOfEnds = new JsonArray();
+                    JsonArray listOfDurations = new JsonArray();
 
-                for (int i = 0; i < array.size(); i++) {
-                    if ((obj = array.get(i).getAsJsonObject()).get("Name").getAsString().equals(prof)) {
-                        System.out.println("Found Breaks");
-                        listOfStarts = obj.getAsJsonArray("Start");
-                        listOfDurations = obj.getAsJsonArray("Duration");
-                        listOfEnds = obj.getAsJsonArray("End");
-                        break;
+                    JsonArray listOfEnds = new JsonArray();
+
+                    for (int i = 0; i < array.size(); i++) {
+                        if ((obj = array.get(i).getAsJsonObject()).get("Name").getAsString().equals(prof)) {
+                            System.out.println("Found Breaks");
+                            listOfStarts = obj.getAsJsonArray("Start");
+                            listOfDurations = obj.getAsJsonArray("Duration");
+                            listOfEnds = obj.getAsJsonArray("End");
+                            break;
+                        }
                     }
-                }
 
-                for (int i = 0; i < listOfStarts.size(); i++) {
-                    breakTracker.add(new BreakTracker(listOfStarts.get(i).getAsString(), listOfDurations.get(i).getAsString(), listOfEnds.get(i).getAsString()));
-                }
+                    for (int i = 0; i < listOfStarts.size(); i++) {
+                        breakTracker.add(new BreakTracker(listOfStarts.get(i).getAsString(), listOfDurations.get(i).getAsString(), listOfEnds.get(i).getAsString()));
+                    }
 
+                }
             }
         };
     }

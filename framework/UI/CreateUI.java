@@ -27,7 +27,7 @@ import java.util.concurrent.Future;
 /**
  * Created by Matthew on 12/27/2016.
  */
-public class CreateUI extends VBox{
+public class CreateUI extends VBox {
     private BreakHandler breakHandler;
     private ItemTrackerPane itemTrackerPane;
     private SkillTrackerPane skillTrackerPane;
@@ -60,9 +60,10 @@ public class CreateUI extends VBox{
     @FXML
     public ListView<String> LV_CurrentTask;
 
-    @FXML private TitledPane TP_Currently;
+    @FXML
+    private TitledPane TP_Currently;
 
-    public CreateUI(AbstractBot bot){
+    public CreateUI(AbstractBot bot) {
 
         FXMLLoader loader = new FXMLLoader();
         loader.setController(this);
@@ -80,78 +81,84 @@ public class CreateUI extends VBox{
         breakHandler.createBreakHandler(TP_BreakHandler, bot);
         itemTrackerPane = new ItemTrackerPane();
         itemTrackerPane.createTableView(TP_ItemTracker);
-        skillTrackerPane = new SkillTrackerPane();
-        skillTrackerPane.createSkillTracker(TP_SkillTracker, bot);
+        skillTrackerPane = new SkillTrackerPane(bot);
+        skillTrackerPane.createSkillTracker(TP_SkillTracker);
 
         setBotName(bot.getMetaData().getName());
         setVersion(bot.getMetaData().getVersion());
     }
 
-    public BreakHandler getBreakHandler(){
+    public BreakHandler getBreakHandler() {
         return breakHandler;
     }
 
-    public ItemTrackerPane getItemTracker(){
+    public ItemTrackerPane getItemTracker() {
         return itemTrackerPane;
     }
 
-    public SkillTrackerPane getSkillTracker(){
+    public SkillTrackerPane getSkillTracker() {
         return skillTrackerPane;
     }
 
-    public Label getVersion(){
+    public Label getVersion() {
         return LL_Version;
     }
 
-    public void setVersion(String version){
-        LL_Version.setText(version);
+    public void setVersion(String version) {
+        LL_Version.setText("V" + version);
     }
 
-    public Label getBotName(){
+    public Label getBotName() {
         return LL_BotName;
     }
 
-    public void setBotName(String botName){
+    public void setBotName(String botName) {
         LL_BotName.setText(botName);
     }
 
-    public Label getRuntime(){
+    public Label getRuntime() {
         return LL_Runtime;
     }
 
-    public void setRuntime(String runtime){
+    public void setRuntime(String runtime) {
         LL_Runtime.setText(runtime);
     }
 
-    public TextField getStopTime(){
+    public TextField getStopTime() {
         return TF_StopTime;
     }
 
-    public void setStopTime(String stopTime){
+    public void setStopTime(String stopTime) {
         TF_StopTime.setText(stopTime);
     }
 
-    public boolean validateStopTime(String stopTime){
+    public boolean validateStopTime(String stopTime) {
         return stopTime.matches("^\\d{2}:\\d{2}:\\d{2}$");
     }
 
-    public HBox getSetupHB(){
+    public HBox getSetupHB() {
         return HB_Setup;
     }
 
-    public void checkStopBot(StopWatch watch){
+    public void stopBot() {
+        GameEvents.OSRS.LOGIN_HANDLER.disable();
+        GameEvents.RS3.LOGIN_HANDLER.disable();
+        GameEvents.OSRS.LOBBY_HANDLER.disable();
+        GameEvents.RS3.LOBBY_HANDLER.disable();
+        while (Environment.getBot().isRunning() && RuneScape.isLoggedIn() && RuneScape.logout()) {
+            Execution.delayUntil(() -> !RuneScape.isLoggedIn(), 10000);
+        }
+        Environment.getBot().stop();
+    }
+
+    public boolean checkStopBot(StopWatch watch){
         String userTime;
         if(!(userTime = TF_StopTime.getText()).equals("00:00:00") && BreakHandler.checkValid(userTime) && BreakHandler.convertToMilli(userTime) > 0){
             if(watch.getRuntime() >= BreakHandler.convertToMilli(userTime)){
-                GameEvents.OSRS.LOGIN_HANDLER.disable();
-                GameEvents.RS3.LOGIN_HANDLER.disable();
-                GameEvents.OSRS.LOBBY_HANDLER.disable();
-                GameEvents.RS3.LOBBY_HANDLER.disable();
-                while(Environment.getBot().isRunning() && RuneScape.isLoggedIn() && RuneScape.logout()){
-                    Execution.delayUntil(() -> !RuneScape.isLoggedIn(), 10000);
-                }
-                Environment.getBot().stop();
+                return true;
             }
         }
+        return false;
     }
+
 }
