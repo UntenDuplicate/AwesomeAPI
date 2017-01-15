@@ -613,33 +613,30 @@ public class BreakHandler {
 
     public static EventHandler<ActionEvent> deleteProf(ComboBox<String> cb_profile, AbstractBot bot) {
         return event -> {
-            List<String> profs = cb_profile.getItems();
-
             String name = cb_profile.getSelectionModel().getSelectedItem();
+
+            cb_profile.getItems().remove(name);
+
+            name = name.replaceAll(" ", "~");
 
             String settings = bot.getSettings().getProperty("AwesomeBreaks");
 
-            JsonParser parser = new JsonParser();
+            if(settings != null) {
 
-            JsonArray array = parser.parse(settings).getAsJsonArray();
+                JsonParser parser = new JsonParser();
 
-            for(int i = 0; i < array.size(); i++){
-                if(array.get(i).getAsJsonObject().get("Name").getAsString().equals(name)){
-                    System.out.println("Removed");
-                    array.remove(i);
-                    break;
+                JsonArray array = parser.parse(settings).getAsJsonArray();
+
+                for (int i = 0; i < array.size(); i++) {
+                    if (array.get(i).getAsJsonObject().get("Name").getAsString().equals(name)) {
+                        System.out.println("Removed");
+                        array.remove(i);
+                        break;
+                    }
                 }
-            }
 
-            for(int i = 0; i < profs.size(); i++){
-                if(profs.get(i).equals(name)){
-                    cb_profile.getItems().remove(i);
-                    System.out.println("Removed");
-                    break;
-                }
+                bot.getSettings().setProperty("AwesomeBreaks", array.toString());
             }
-
-            bot.getSettings().setProperty("AwesomeBreaks", array.toString());
         };
     }
 }
