@@ -11,6 +11,7 @@ import com.runemate.game.api.hybrid.util.StopWatch;
 import com.runemate.game.api.script.Execution;
 import com.runemate.game.api.script.framework.AbstractBot;
 import com.runemate.game.api.script.framework.core.LoopingThread;
+import javafx.application.Platform;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.control.Label;
@@ -87,7 +88,10 @@ public class CreateUI extends VBox {
 
         StopWatch watch = new StopWatch();
         watch.start();
-        LoopingThread runTime = new LoopingThread(() -> setRuntime(watch.getRuntimeAsString()), 5000);
+        Platform.runLater(() -> {
+                    LoopingThread runTime = new LoopingThread(() -> setRuntime(watch.getRuntimeAsString()), 5000);
+                    runTime.start();
+                });
 
         setBotName(bot.getMetaData().getName());
         setVersion(bot.getMetaData().getVersion());
