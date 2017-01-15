@@ -63,7 +63,7 @@ public class SkillTrackerPane {
                 Platform.runLater(() -> expHourLabels.get(finalI).setText(Math.round(Integer.parseInt(skillLabels.get(finalI).getText())/((double)watch.getRuntime()/3600000)) + ""));
                 Platform.runLater(() -> {
                     try {
-                        if(bot.getPlatform().invokeAndWait(() -> Environment.getBot().isRunning()) && bot.getPlatform().invokeAndWait(() -> RuneScape.isLoggedIn())) {
+                        if(bot.getPlatform() != null && bot.getPlatform().invokeAndWait(() -> RuneScape.isLoggedIn())) {
                             try {
                                 expLeft = bot.getPlatform().invokeAndWait(() -> Skill.valueOf(skillBars.get(finalI).getSkill().toUpperCase()).getExperienceToNextLevel());
                                 if (expLeft > 0)
