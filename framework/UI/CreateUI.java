@@ -10,6 +10,7 @@ import com.runemate.game.api.hybrid.util.Resources;
 import com.runemate.game.api.hybrid.util.StopWatch;
 import com.runemate.game.api.script.Execution;
 import com.runemate.game.api.script.framework.AbstractBot;
+import com.runemate.game.api.script.framework.core.LoopingThread;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.control.Label;
@@ -83,6 +84,10 @@ public class CreateUI extends VBox {
         itemTrackerPane.createTableView(TP_ItemTracker);
         skillTrackerPane = new SkillTrackerPane(bot);
         skillTrackerPane.createSkillTracker(TP_SkillTracker);
+
+        StopWatch watch = new StopWatch();
+        watch.start();
+        LoopingThread runTime = new LoopingThread(() -> setRuntime(watch.getRuntimeAsString()), 5000);
 
         setBotName(bot.getMetaData().getName());
         setVersion(bot.getMetaData().getVersion());
