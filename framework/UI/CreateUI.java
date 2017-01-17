@@ -166,6 +166,22 @@ public class CreateUI extends VBox implements SkillListener, InventoryListener{
         return HB_Setup;
     }
 
+    public void startBankTimer(){
+        bankTimer.start();
+    }
+
+    public void resetBankTimer(){
+        bankTimer.reset();
+    }
+
+    public void stopBankTimer(){
+        bankTimer.stop();
+    }
+
+    public long getBankTimerRuntime(){
+        return bankTimer.getRuntime();
+    }
+
     public void stopBot() {
         GameEvents.OSRS.LOGIN_HANDLER.disable();
         GameEvents.RS3.LOGIN_HANDLER.disable();
