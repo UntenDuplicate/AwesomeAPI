@@ -8,11 +8,17 @@ import com.runemate.game.api.hybrid.local.Skill;
 import com.runemate.game.api.hybrid.util.StopWatch;
 import com.runemate.game.api.script.Execution;
 import com.runemate.game.api.script.framework.AbstractBot;
+import com.runemate.game.api.script.framework.core.BotPlatform;
 import com.runemate.game.api.script.framework.core.LoopingThread;
 import com.runemate.game.api.script.framework.listeners.events.SkillEvent;
 import javafx.application.Platform;
+import javafx.collections.FXCollections;
+import javafx.collections.ObservableList;
+import javafx.event.ActionEvent;
+import javafx.event.EventHandler;
 import javafx.geometry.Orientation;
 import javafx.geometry.Pos;
+import javafx.scene.Node;
 import javafx.scene.control.*;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.StackPane;
@@ -31,6 +37,9 @@ import static javafx.scene.layout.Region.USE_COMPUTED_SIZE;
 
 /**
  * Created by Matthew on 11/16/2016.
+ * A class that contains methods that create TitledPanes
+ * which contain ProgressBars and Labels as their Header
+ * and can now be removed/added by users.
  */
 public class SkillTrackerPane {
 
@@ -47,23 +56,38 @@ public class SkillTrackerPane {
     private List<TextField> goals = new ArrayList<>();
     public AbstractBot bot;
     private boolean changing;
+    private BotPlatform platform;
+    private StopWatch watch = new StopWatch();
+    private String skillName = "";
+    private List<Button> removeButtons = new ArrayList<>();
+    private boolean updating = false;
+    private LoopingThread loopingThread;
 
+    /**
+     * The constructor for the pane that creates a SkillTrackerPane object for a bot
+     * @param bot -> The bot being run
+     */
     public SkillTrackerPane(AbstractBot bot){
         this.bot = bot;
     }
 
-
+    /**
+     * Pretty self explanatory, a label updater Thread that loops every 500ms.
+     */
     public void createLabelUpdater(){
         StopWatch watch = new StopWatch();
         watch.start();
-        LoopingThread loopingThread = new LoopingThread(() -> {
+        loopingThread = new LoopingThread(() -> {
             checkGoals();
-            for(int i = 0; i < skillBars.size(); i++){
+            updating = true;
+            for (int i = 0; i < skillBars.size(); i++) {
                 int finalI = i;
-                Platform.runLater(() -> expHourLabels.get(finalI).setText(Math.round(Integer.parseInt(skillLabels.get(finalI).getText())/((double)watch.getRuntime()/3600000)) + ""));
+                Platform.runLater(() -> expHourLabels.get(finalI).setText(Math.round(Integer.parseInt(skillLabels.get(finalI).getText()) / ((double) watch.getRuntime() / 3600000)) + ""));
                 Platform.runLater(() -> {
                     try {
-                        if(bot.getPlatform() != null && bot.getPlatform().invokeAndWait(() -> RuneScape.isLoggedIn())) {
+                        if (bot != null &&
+                                (platform = bot.getPlatform()) != null &&
+                                platform.invokeAndWait(() -> RuneScape.isLoggedIn())) {
                             try {
                                 expLeft = bot.getPlatform().invokeAndWait(() -> Skill.valueOf(skillBars.get(finalI).getSkill().toUpperCase()).getExperienceToNextLevel());
                                 if (expLeft > 0)
@@ -78,13 +102,18 @@ public class SkillTrackerPane {
                     }
                 });
             }
+            updating = false;
         }, 500);
         loopingThread.start();
     }
 
+    /**
+     * Calls a method that either adds or updates a SkillTracker TitledPane.
+     * @param event -> The skill which changed
+     */
     public void updateLevels(SkillEvent event) {
         if (skillBars.isEmpty()) {
-            addSkillBar(event, 0);
+            addSkillBar(event);
         }
 
         for (int i = 0; i < skillBars.size(); i++) {
@@ -101,12 +130,16 @@ public class SkillTrackerPane {
                 Platform.runLater(() -> skillLabels.get(finalI).setText(Integer.parseInt(skillLabels.get(finalI).getText()) + event.getChange() + ""));
                 break;
             } else if (i == skillBars.size() - 1) {
-                addSkillBar(event, i);
+                addSkillBar(event);
             }
         }
     }
 
-    public void addSkillBar(SkillEvent event, int i){
+    /**
+     * Adds a SkillBar (ProgressBar and Label) to a list of ProgressIndicator bars
+     * @param event -> The SkillEvent
+     */
+    public void addSkillBar(SkillEvent event){
         try {
             level =
                     bot.getPlatform().invokeAndWait(
@@ -126,11 +159,33 @@ public class SkillTrackerPane {
         });
     }
 
+    /**
+     * Fills the SkillTracker TitledPane with a VBox that includes a Spinner and Add button
+     * @param AN_SkillTracker -> The skilltracker TitledPane sorry the name should have been TP_SkillTracker
+     */
     public void createSkillTracker(TitledPane AN_SkillTracker) {
         AN_SkillTracker.setContent(vBox);
+        ObservableList<String> allSkills = FXCollections.observableArrayList("AGILITY", "ATTACK", "CONSTITUTION", "CONSTRUCTION", "COOKING", "CRAFTING",
+                "DEFENSE", "DIVINATION", "DUNGEONEERING", "FARMING", "FIREMAKING", "FISHING", "FLETCHING", "HERBLORE", "HUNTER", "INVENTION", "MAGIC",
+                "MINING", "PRAYER", "RANGED", "RUNECRAFTING", "SLAYER", "SMITHING", "STRENGTH", "SUMMONING", "THIEVING", "WOODCUTTING");
+        Spinner<String> spinner = new Spinner<>(allSkills);
+        Button createSkillTracker = new Button("Add");
+        EventHandler<ActionEvent> checkSkillSelected = event -> {
+            if((skillName = spinner.getValue()) != null){
+                SkillEvent skillEvent = new SkillEvent(Skill.valueOf(skillName), SkillEvent.Type.EXPERIENCE_GAINED, 0, 0);
+                addSkillBar(skillEvent);
+            }
+        };
+        createSkillTracker.setOnAction(checkSkillSelected);
+        HBox hbox = new HBox(spinner, new Separator(Orientation.VERTICAL), createSkillTracker);
+        hbox.setAlignment(Pos.CENTER);
+        vBox.getChildren().addAll(hbox, new Separator(Orientation.HORIZONTAL));
         createLabelUpdater();
     }
 
+    /**
+     * A ProgressIndicator Object that creates a ProgressBar and Label TitledPane
+     */
     public class ProgressIndicatorBar extends StackPane {
         final private int level;
         final private String skillName;
@@ -182,7 +237,14 @@ public class SkillTrackerPane {
         }
     }
 
-    public void addSkillPane(int i) throws ExecutionException, InterruptedException, IOException {
+    /**
+     * Adds a TitledPane to the Vbox using the int 'i' as the index for the skill(obtained from a list)
+     * @param i -> Index of the skill in the lists
+     * @throws ExecutionException
+     * @throws InterruptedException
+     * @throws IOException
+     */
+        public void addSkillPane(int i) throws ExecutionException, InterruptedException, IOException {
         pane = new TitledPane(null, null);
 
         pane.setPrefSize(USE_COMPUTED_SIZE, USE_COMPUTED_SIZE);
@@ -211,13 +273,10 @@ public class SkillTrackerPane {
 
         goals.add(goal);
 
-        goal.setOnAction(event -> {
-            StopWatch watch = new StopWatch();
+        goal.textProperty().addListener((observable, oldValue, newValue) -> {
+            watch.reset();
+            System.out.println("textfield changed from " + oldValue + " to " + newValue);
             watch.start();
-            while(watch.getRuntime(TimeUnit.SECONDS) < 20){
-                changing = true;
-            }
-            changing = false;
         });
 
         skillLabels.add(label);
@@ -230,7 +289,13 @@ public class SkillTrackerPane {
 
         Separator separator1 = new Separator(Orientation.VERTICAL);
 
-        HBox hbox = new HBox(label1, label, separator, label2, labels, separator1, label3, labelT, new Separator(Orientation.VERTICAL), new Label("Goal: "), goal);
+        Button removeButton = new Button("X");
+
+        removeButton.setOnAction(deleteSkillTracker());
+
+        removeButtons.add(removeButton);
+
+        HBox hbox = new HBox(label1, label, separator, label2, labels, separator1, label3, labelT, new Separator(Orientation.VERTICAL), new Label("Goal: "), goal, new Separator(Orientation.VERTICAL), removeButton);
 
         hbox.setAlignment(Pos.CENTER);
 
@@ -238,22 +303,51 @@ public class SkillTrackerPane {
 
         pane.setContent(hbox);
 
-        vBox.getChildren().add(pane);
-
-        Separator separator2 = new Separator(Orientation.HORIZONTAL);
-
-        vBox.getChildren().add(separator2);
+        vBox.getChildren().addAll(pane, new Separator(Orientation.HORIZONTAL));
 
         System.out.println("added");
 
         myBar.prefWidthProperty().bind(pane.widthProperty().subtract(55));
     }
 
+    /**
+     * Deletes the SkillTracker which had it's delete button pressed
+     * @return Does the removing.
+     */
+        private EventHandler<ActionEvent> deleteSkillTracker() {
+        return event -> {
+            for(int i = 0; i < removeButtons.size(); i++){
+                if(removeButtons.get(i).equals(event.getSource())){
+
+                    while(updating){
+
+                    }
+                    ObservableList<Node> children;
+                    Node temp = (children = vBox.getChildren()).get(i * 2 + 2);
+                    children.remove(temp);
+                    children.remove(children.get(i * 2 + 1));
+
+                    skillLabels.remove(i);
+                    expHourLabels.remove(i);
+                    timeLables.remove(i);
+                    removeButtons.remove(i);
+                    goals.remove(i);
+                    skillBars.remove(i);
+                    System.out.println("Removed SkillListener");
+                }
+            }
+        };
+    }
+
+    /**
+     * Checks the list of goals to see if any have been reached and logs out/stops bot if so.
+     */
     public void checkGoals(){
-        if(!changing) {
+        if(watch.getRuntime(TimeUnit.SECONDS) > 20) {
             for (int i = 0; i < goals.size(); i++) {
                 int tempGoal;
-                if ((tempGoal = Integer.parseInt(goals.get(i).getText())) > 0) {
+                String text;
+                if ((text = goals.get(i).getText()).matches("^[1-9]\\d*$") && (tempGoal = Integer.parseInt(text)) > 0) {
                     int finalI = i;
                     try {
                         bot.getPlatform().invokeAndWait(() -> {
@@ -267,6 +361,7 @@ public class SkillTrackerPane {
                                         Execution.delayUntil(() -> !RuneScape.isLoggedIn(), 10000);
                                     }
                                 }
+                                loopingThread.interrupt();
                                 Environment.getBot().stop();
                             }
                         });

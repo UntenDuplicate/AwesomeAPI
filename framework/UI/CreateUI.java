@@ -1,6 +1,7 @@
 package com.AwesomeAPI.framework.UI;
 
 import com.AwesomeAPI.framework.UI.BreakHandler.BreakHandler;
+import com.AwesomeAPI.framework.UI.CurrentTaskList.CurrentTaskList;
 import com.AwesomeAPI.framework.UI.ItemTrackerPane.ItemTrackerPane;
 import com.AwesomeAPI.framework.UI.SkillTrackerPane.SkillTrackerPane;
 import com.runemate.game.api.hybrid.Environment;
@@ -10,6 +11,12 @@ import com.runemate.game.api.hybrid.util.Resources;
 import com.runemate.game.api.hybrid.util.StopWatch;
 import com.runemate.game.api.script.Execution;
 import com.runemate.game.api.script.framework.AbstractBot;
+import com.runemate.game.api.script.framework.core.LoopingThread;
+import com.runemate.game.api.script.framework.listeners.InventoryListener;
+import com.runemate.game.api.script.framework.listeners.SkillListener;
+import com.runemate.game.api.script.framework.listeners.events.ItemEvent;
+import com.runemate.game.api.script.framework.listeners.events.SkillEvent;
+import javafx.application.Platform;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.control.Label;
@@ -23,15 +30,19 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 
 /**
  * Created by Matthew on 12/27/2016.
+ * This Class is used to Create the Whole UI from my API with almost no extra stuff needed.
  */
-public class CreateUI extends VBox {
+public class CreateUI extends VBox implements SkillListener, InventoryListener{
+    public CurrentTaskList currentTaskList;
     private BreakHandler breakHandler;
     private ItemTrackerPane itemTrackerPane;
     private SkillTrackerPane skillTrackerPane;
     private Future<InputStream> stream;
+    private StopWatch bankTimer = new StopWatch();
 
     @FXML
     private Label LL_Version;
@@ -58,11 +69,15 @@ public class CreateUI extends VBox {
     private HBox HB_Setup;
 
     @FXML
-    public ListView<String> LV_CurrentTask;
+    private ListView<String> LV_CurrentTask;
 
     @FXML
     private TitledPane TP_Currently;
 
+    /**
+     * Creates all the UI parts and now Handles the skill Listeners and inventory
+     * @param bot -> The bot
+     */
     public CreateUI(AbstractBot bot) {
 
         FXMLLoader loader = new FXMLLoader();
@@ -83,8 +98,20 @@ public class CreateUI extends VBox {
         itemTrackerPane.createTableView(TP_ItemTracker);
         skillTrackerPane = new SkillTrackerPane(bot);
         skillTrackerPane.createSkillTracker(TP_SkillTracker);
+        currentTaskList = new CurrentTaskList();
+        LoopingThread thread = new LoopingThread(() -> {
+            LV_CurrentTask.setItems(currentTaskList.getList());
+
+            if (!currentTaskList.getList().isEmpty()) {
+                Platform.runLater(() -> TP_Currently.setText("Currently: " + currentTaskList.getList().get(0)));
+            }
+        }, 500);
+        thread.start();
+
         setBotName(bot.getMetaData().getName());
         setVersion(bot.getMetaData().getVersion());
+
+        bot.getEventDispatcher().addListener(this);
     }
 
     public BreakHandler getBreakHandler() {
@@ -158,6 +185,23 @@ public class CreateUI extends VBox {
             }
         }
         return false;
+    }
+
+    @Override
+    public void onExperienceGained(SkillEvent event) {
+        skillTrackerPane.updateLevels(event);
+    }
+
+    @Override
+    public void onItemAdded(ItemEvent event){
+        if(bankTimer.getRuntime(TimeUnit.MILLISECONDS) > 1000)
+            itemTrackerPane.refreshItems(event);
+    }
+
+    @Override
+    public void onItemRemoved(ItemEvent event){
+        if(bankTimer.getRuntime(TimeUnit.MILLISECONDS) > 1000)
+            itemTrackerPane.refreshItems(event);
     }
 
 }

@@ -37,6 +37,14 @@ public class CurrentTaskList {
         prevTask = task;
     }
 
+    public int getCount(){
+        return count;
+    }
+
+    public String getPrevTask(){
+        return prevTask;
+    }
+
     public ObservableList<String> getList(){
         return currentTaskList;
     }

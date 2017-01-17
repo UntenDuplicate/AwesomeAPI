@@ -615,27 +615,30 @@ public class BreakHandler {
         return event -> {
             String name = cb_profile.getSelectionModel().getSelectedItem();
 
-            cb_profile.getItems().remove(name);
+            if(name != null) {
 
-            name = name.replaceAll(" ", "~");
+                cb_profile.getItems().remove(name);
 
-            String settings = bot.getSettings().getProperty("AwesomeBreaks");
+                name = name.replaceAll(" ", "~");
 
-            if(settings != null) {
+                String settings = bot.getSettings().getProperty("AwesomeBreaks");
 
-                JsonParser parser = new JsonParser();
+                if (settings != null) {
 
-                JsonArray array = parser.parse(settings).getAsJsonArray();
+                    JsonParser parser = new JsonParser();
 
-                for (int i = 0; i < array.size(); i++) {
-                    if (array.get(i).getAsJsonObject().get("Name").getAsString().equals(name)) {
-                        System.out.println("Removed");
-                        array.remove(i);
-                        break;
+                    JsonArray array = parser.parse(settings).getAsJsonArray();
+
+                    for (int i = 0; i < array.size(); i++) {
+                        if (array.get(i).getAsJsonObject().get("Name").getAsString().equals(name)) {
+                            System.out.println("Removed");
+                            array.remove(i);
+                            break;
+                        }
                     }
-                }
 
-                bot.getSettings().setProperty("AwesomeBreaks", array.toString());
+                    bot.getSettings().setProperty("AwesomeBreaks", array.toString());
+                }
             }
         };
     }
