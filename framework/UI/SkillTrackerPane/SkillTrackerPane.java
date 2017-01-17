@@ -255,9 +255,9 @@ public class SkillTrackerPane {
 
         pane.setGraphic(myBar);
 
-        Label label1 = new Label(myBar.getSkill() + " Exp Gained: ");
+        Label label1 = new Label("Exp Gained: ");
 
-        Label label2 = new Label(myBar.getSkill() + "Exp/Hour: ");
+        Label label2 = new Label("Exp/Hour: ");
 
         Label label3 = new Label("Time to Next: ");
 
