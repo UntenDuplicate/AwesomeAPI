@@ -27,7 +27,6 @@ import javafx.scene.text.Font;
 import javafx.scene.text.FontWeight;
 import javafx.scene.text.Text;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
@@ -45,23 +44,25 @@ public class SkillTrackerPane {
 
     private int level;
     private double progress;
-    public List<ProgressIndicatorBar> skillBars = new ArrayList<>();
     private TitledPane pane;
-    public List<Label> skillLabels = new ArrayList<>();
-    private List<Label> expHourLabels = new ArrayList<>();
-    private List<Label> timeLables = new ArrayList<>();
     private int expLeft;
-    private int tempExp;
     private VBox vBox = new VBox();
-    private List<TextField> goals = new ArrayList<>();
     public AbstractBot bot;
-    private boolean changing;
     private BotPlatform platform;
     private StopWatch watch = new StopWatch();
     private String skillName = "";
-    private List<Button> removeButtons = new ArrayList<>();
     private boolean updating = false;
     private LoopingThread loopingThread;
+    private List<ProgressIndicatorPane> progressIndicatorPanes = new ArrayList<>();
+    private ProgressIndicatorPane progressIndicatorPane;
+    private ProgressIndicatorBar progressIndicatorBar;
+    private Label LL_ExpAmount;
+    private ObservableList<Node> children;
+    private Node temp;
+    private String text;
+    private int tempGoal;
+    private StopWatch runTime = new StopWatch();
+    private Skill currentSkill;
 
     /**
      * The constructor for the pane that creates a SkillTrackerPane object for a bot
@@ -69,32 +70,43 @@ public class SkillTrackerPane {
      */
     public SkillTrackerPane(AbstractBot bot){
         this.bot = bot;
+        runTime.start();
     }
 
     /**
      * Pretty self explanatory, a label updater Thread that loops every 500ms.
      */
-    public void createLabelUpdater(){
-        StopWatch watch = new StopWatch();
-        watch.start();
+    public void createLabelUpdater() {
         loopingThread = new LoopingThread(() -> {
+
             checkGoals();
+
             updating = true;
-            for (int i = 0; i < skillBars.size(); i++) {
+
+            for (int i = 0; i < progressIndicatorPanes.size(); i++) {
+
                 int finalI = i;
-                Platform.runLater(() -> expHourLabels.get(finalI).setText(Math.round(Integer.parseInt(skillLabels.get(finalI).getText()) / ((double) watch.getRuntime() / 3600000)) + ""));
+
                 Platform.runLater(() -> {
+
+                    progressIndicatorPane = progressIndicatorPanes.get(finalI);
+
+                    progressIndicatorPane.getLL_ExpHour().setText(
+                            Math.round(Integer.parseInt(progressIndicatorPane.getLL_ExpAmount()
+                                    .getText()) / ((double) runTime.getRuntime() / 3600000)) + "");
+
                     try {
-                        if (bot != null &&
-                                (platform = bot.getPlatform()) != null &&
-                                platform.invokeAndWait(() -> RuneScape.isLoggedIn())) {
-                            try {
-                                expLeft = bot.getPlatform().invokeAndWait(() -> Skill.valueOf(skillBars.get(finalI).getSkill().toUpperCase()).getExperienceToNextLevel());
-                                if (expLeft > 0)
-                                    tempExp = expLeft;
-                                timeLables.get(finalI).setText(BreakHandler.revertToString((int) (3600000 * (((double) (tempExp) / Integer.parseInt(expHourLabels.get(finalI).getText()))))));
-                            } catch (ExecutionException | InterruptedException e) {
-                                e.printStackTrace();
+                        if (bot != null && (platform = bot.getPlatform()) != null && platform.invokeAndWait(
+                                RuneScape::isLoggedIn)) {
+
+                            expLeft = bot.getPlatform().invokeAndWait(() ->
+                                    Skill.valueOf(progressIndicatorPane.getPB_Bar().getSkill().toUpperCase())
+                                            .getExperienceToNextLevel());
+
+                            if (expLeft > 0) {
+                                progressIndicatorPane.getLL_TimeToNext().setText(
+                                        BreakHandler.revertToString((int) (3600000 * (((double) (expLeft) /
+                                                Integer.parseInt(progressIndicatorPane.getLL_ExpHour().getText()))))));
                             }
                         }
                     } catch (ExecutionException | InterruptedException e) {
@@ -112,24 +124,34 @@ public class SkillTrackerPane {
      * @param event -> The skill which changed
      */
     public void updateLevels(SkillEvent event) {
-        if (skillBars.isEmpty()) {
+        if (progressIndicatorPanes.isEmpty()) {
             addSkillBar(event);
         }
 
-        for (int i = 0; i < skillBars.size(); i++) {
-            if (skillBars.get(i).getSkill().equals(event.getSkill().toString())) {
-                System.out.println("Index: " + i + " Skill: " + event.getSkill());
+        for (int i = 0; i < progressIndicatorPanes.size(); i++) {
+
+            if ((progressIndicatorBar = (progressIndicatorPane = progressIndicatorPanes.get(i)).getPB_Bar()).getSkill().equals(event.getSkill().toString())) {
                 try {
                     level = bot.getPlatform().invokeAndWait(() -> event.getSkill().getBaseLevel());
-                    progress = bot.getPlatform().invokeAndWait(() -> (double) (100 - event.getSkill().getExperienceToNextLevelAsPercent()) / 100.0);
+
+                    progress = bot.getPlatform().invokeAndWait(() ->
+                            (double) (100 - event.getSkill().getExperienceToNextLevelAsPercent()) / 100.0);
+
                 } catch (ExecutionException | InterruptedException e) {
                     e.printStackTrace();
                 }
+
                 int finalI = i;
-                Platform.runLater(() -> skillBars.get(finalI).syncProgress(progress, level, (level - skillBars.get(finalI).getLevel())));
-                Platform.runLater(() -> skillLabels.get(finalI).setText(Integer.parseInt(skillLabels.get(finalI).getText()) + event.getChange() + ""));
+
+                Platform.runLater(() -> progressIndicatorBar.syncProgress(
+                        progress, level, (level - progressIndicatorBar.getLevel())));
+
+                Platform.runLater(() -> (LL_ExpAmount = progressIndicatorPane.getLL_ExpAmount()).setText(
+                        Integer.parseInt(LL_ExpAmount.getText()) + event.getChange() + ""));
+
                 break;
-            } else if (i == skillBars.size() - 1) {
+
+            } else if (i == progressIndicatorPanes.size() - 1) {
                 addSkillBar(event);
             }
         }
@@ -141,21 +163,52 @@ public class SkillTrackerPane {
      */
     public void addSkillBar(SkillEvent event){
         try {
-            level =
-                    bot.getPlatform().invokeAndWait(
-                            () -> event.getSkill().
-                                    getBaseLevel());
-            progress = bot.getPlatform().invokeAndWait(() -> (double)(100 - event.getSkill().getExperienceToNextLevelAsPercent())/100.0);
+            level = bot.getPlatform().invokeAndWait(() -> (currentSkill = event.getSkill()).getBaseLevel());
+            progress = bot.getPlatform().invokeAndWait(() -> (double)(100 - currentSkill.getExperienceToNextLevelAsPercent())/100.0);
         } catch (ExecutionException | InterruptedException e) {
             e.printStackTrace();
         }
-        skillBars.add(new ProgressIndicatorBar(progress, event.getSkill().toString(), level, 0));
+
+        ProgressIndicatorBar progressIndicatorBar = new ProgressIndicatorBar(progress, currentSkill.toString(), level, 0);
+
         Platform.runLater(() -> {
-            try {
-                addSkillPane(skillBars.size() - 1);
-            } catch (ExecutionException | InterruptedException | IOException e) {
-                e.printStackTrace();
-            }
+
+            Label LL_ExpHour = new Label("0");
+            Label LL_TimeToNext = new Label("0");
+            Label LL_ExpGained = new Label(event.getChange() + "");
+
+            TextField TF_Goal = new TextField("0");
+            TF_Goal.setPrefWidth(40);
+            TF_Goal.textProperty().addListener((observable, oldValue, newValue) -> {
+                watch.reset();
+                System.out.println("textfield changed from " + oldValue + " to " + newValue);
+                watch.start();
+            });
+
+            Button BN_Remove = new Button("X");
+            BN_Remove.setOnAction(deleteSkillTracker());
+
+            HBox hbox = new HBox(new Label("Exp Gained: "), LL_ExpGained,
+                    new Separator(Orientation.VERTICAL),
+                    new Label("Exp/Hour: "), LL_ExpHour, new Separator(Orientation.VERTICAL),
+                    new Label("Time to Next: "), LL_TimeToNext, new Separator(Orientation.VERTICAL),
+                    new Label("Goal: "),
+                    TF_Goal, new Separator(Orientation.VERTICAL), BN_Remove);
+            hbox.setAlignment(Pos.CENTER);
+            hbox.setSpacing(10);
+
+            pane = new TitledPane();
+            pane.setPrefSize(USE_COMPUTED_SIZE, USE_COMPUTED_SIZE);
+            pane.setGraphic(progressIndicatorBar);
+            pane.setContent(hbox);
+
+            progressIndicatorBar.prefWidthProperty().bind(pane.widthProperty().subtract(55));
+
+            vBox.getChildren().addAll(pane, new Separator(Orientation.HORIZONTAL));
+
+            progressIndicatorPanes.add(new ProgressIndicatorPane(progressIndicatorBar, LL_ExpGained,
+                    LL_ExpHour, LL_TimeToNext, TF_Goal, BN_Remove));
+
         });
     }
 
@@ -164,150 +217,33 @@ public class SkillTrackerPane {
      * @param AN_SkillTracker -> The skilltracker TitledPane sorry the name should have been TP_SkillTracker
      */
     public void createSkillTracker(TitledPane AN_SkillTracker) {
+
         AN_SkillTracker.setContent(vBox);
-        ObservableList<String> allSkills = FXCollections.observableArrayList("AGILITY", "ATTACK", "CONSTITUTION", "CONSTRUCTION", "COOKING", "CRAFTING",
-                "DEFENSE", "DIVINATION", "DUNGEONEERING", "FARMING", "FIREMAKING", "FISHING", "FLETCHING", "HERBLORE", "HUNTER", "INVENTION", "MAGIC",
-                "MINING", "PRAYER", "RANGED", "RUNECRAFTING", "SLAYER", "SMITHING", "STRENGTH", "SUMMONING", "THIEVING", "WOODCUTTING");
+
+        ObservableList<String> allSkills = FXCollections.observableArrayList("AGILITY", "ATTACK", "CONSTITUTION",
+                "CONSTRUCTION", "COOKING", "CRAFTING", "DEFENSE", "DIVINATION", "DUNGEONEERING", "FARMING", "FIREMAKING",
+                "FISHING", "FLETCHING", "HERBLORE", "HUNTER", "INVENTION", "MAGIC", "MINING", "PRAYER", "RANGED",
+                "RUNECRAFTING", "SLAYER", "SMITHING", "STRENGTH", "SUMMONING", "THIEVING", "WOODCUTTING");
+
         Spinner<String> spinner = new Spinner<>(allSkills);
+
         Button createSkillTracker = new Button("Add");
+
         EventHandler<ActionEvent> checkSkillSelected = event -> {
             if((skillName = spinner.getValue()) != null){
                 SkillEvent skillEvent = new SkillEvent(Skill.valueOf(skillName), SkillEvent.Type.EXPERIENCE_GAINED, 0, 0);
                 addSkillBar(skillEvent);
             }
         };
+
         createSkillTracker.setOnAction(checkSkillSelected);
+
         HBox hbox = new HBox(spinner, new Separator(Orientation.VERTICAL), createSkillTracker);
         hbox.setAlignment(Pos.CENTER);
+
         vBox.getChildren().addAll(hbox, new Separator(Orientation.HORIZONTAL));
+
         createLabelUpdater();
-    }
-
-    /**
-     * A ProgressIndicator Object that creates a ProgressBar and Label TitledPane
-     */
-    public class ProgressIndicatorBar extends StackPane {
-        final private int level;
-        final private String skillName;
-
-        final private ProgressBar bar  = new ProgressBar();
-        final private Text text = new Text();
-
-        public ProgressIndicatorBar(final double progress, final String skillName, final int level, final int levelsGained) {
-            this.level = level;
-            this.skillName = skillName;
-
-
-            text.setFont(Font.font("comic sans", FontWeight.EXTRA_BOLD, 16));
-
-            String css = "-fx-accent rgb(" + ((double)1 - progress) * 255 + ", " + progress * 255 + ", 0)";
-
-            bar.styleProperty().set(css);
-
-            bar.setMaxWidth(Double.MAX_VALUE); // allows the progress bar to expand to fill available horizontal space.
-
-            bar.setMinHeight(27);
-
-            getChildren().setAll(bar, text);
-
-            syncProgress(progress, level, levelsGained);
-
-
-        }
-
-        public String getSkill(){
-            return skillName;
-        }
-
-        public int getLevel(){return level;}
-
-        // synchronizes the progress indicated with the progress and levels passed in.
-        public void syncProgress(double progress, int level, int levelsGained) {
-            if (skillName == this.skillName) {
-                if (progress == 0) {
-                    text.setText(skillName);
-                    bar.setProgress(ProgressBar.INDETERMINATE_PROGRESS);
-                } else {
-                    text.setText(skillName + " | Level: " + level + " | Levels Gained: " + levelsGained);
-                    bar.setProgress(progress);
-                    String css = "-fx-accent: rgb(" + ((double)1-progress) * 255 + ", " + progress * 255 + ", 0)";
-                    bar.styleProperty().set(css);
-                }
-            }
-        }
-    }
-
-    /**
-     * Adds a TitledPane to the Vbox using the int 'i' as the index for the skill(obtained from a list)
-     * @param i -> Index of the skill in the lists
-     * @throws ExecutionException
-     * @throws InterruptedException
-     * @throws IOException
-     */
-        public void addSkillPane(int i) throws ExecutionException, InterruptedException, IOException {
-        pane = new TitledPane(null, null);
-
-        pane.setPrefSize(USE_COMPUTED_SIZE, USE_COMPUTED_SIZE);
-
-        ProgressIndicatorBar myBar = skillBars.get(i);
-
-        System.out.println("Added " + myBar.getSkill());
-
-        pane.setGraphic(myBar);
-
-        Label label1 = new Label("Exp Gained: ");
-
-        Label label2 = new Label("Exp/Hour: ");
-
-        Label label3 = new Label("Time to Next: ");
-
-        Label labelT = new Label("0");
-
-        Label labels = new Label("0");
-
-        Label label = new Label("0");
-
-        TextField goal = new TextField("0");
-
-        goal.setPrefWidth(40);
-
-        goals.add(goal);
-
-        goal.textProperty().addListener((observable, oldValue, newValue) -> {
-            watch.reset();
-            System.out.println("textfield changed from " + oldValue + " to " + newValue);
-            watch.start();
-        });
-
-        skillLabels.add(label);
-
-        expHourLabels.add(labels);
-
-        timeLables.add(labelT);
-
-        Separator separator = new Separator(Orientation.VERTICAL);
-
-        Separator separator1 = new Separator(Orientation.VERTICAL);
-
-        Button removeButton = new Button("X");
-
-        removeButton.setOnAction(deleteSkillTracker());
-
-        removeButtons.add(removeButton);
-
-        HBox hbox = new HBox(label1, label, separator, label2, labels, separator1, label3, labelT, new Separator(Orientation.VERTICAL), new Label("Goal: "), goal, new Separator(Orientation.VERTICAL), removeButton);
-
-        hbox.setAlignment(Pos.CENTER);
-
-        hbox.setSpacing(10);
-
-        pane.setContent(hbox);
-
-        vBox.getChildren().addAll(pane, new Separator(Orientation.HORIZONTAL));
-
-        System.out.println("added");
-
-        myBar.prefWidthProperty().bind(pane.widthProperty().subtract(55));
     }
 
     /**
@@ -316,24 +252,19 @@ public class SkillTrackerPane {
      */
         private EventHandler<ActionEvent> deleteSkillTracker() {
         return event -> {
-            for(int i = 0; i < removeButtons.size(); i++){
-                if(removeButtons.get(i).equals(event.getSource())){
+            for(int i = 0; i < progressIndicatorPanes.size(); i++){
+                if(progressIndicatorPanes.get(i).getBN_Remove().equals(event.getSource())){
 
-                    while(updating){
+                    while(updating){ //To Keep from an error from deleting a pane while updating it.
 
                     }
-                    ObservableList<Node> children;
-                    Node temp = (children = vBox.getChildren()).get(i * 2 + 2);
+
+                    temp = (children = vBox.getChildren()).get(i * 2 + 2);
+
                     children.remove(temp);
                     children.remove(children.get(i * 2 + 1));
 
-                    skillLabels.remove(i);
-                    expHourLabels.remove(i);
-                    timeLables.remove(i);
-                    removeButtons.remove(i);
-                    goals.remove(i);
-                    skillBars.remove(i);
-                    System.out.println("Removed SkillListener");
+                    progressIndicatorPanes.remove(i);
                 }
             }
         };
@@ -344,14 +275,15 @@ public class SkillTrackerPane {
      */
     public void checkGoals(){
         if(watch.getRuntime(TimeUnit.SECONDS) > 20) {
-            for (int i = 0; i < goals.size(); i++) {
-                int tempGoal;
-                String text;
-                if ((text = goals.get(i).getText()).matches("^[1-9]\\d*$") && (tempGoal = Integer.parseInt(text)) > 0) {
+
+            for (int i = 0; i < progressIndicatorPanes.size(); i++) {
+
+                if ((text = (progressIndicatorPane = progressIndicatorPanes.get(i)).getTF_LvlGoal().getText()).matches("^[1-9]\\d*$") && (tempGoal = Integer.parseInt(text)) > 0) {
                     int finalI = i;
+
                     try {
                         bot.getPlatform().invokeAndWait(() -> {
-                            if (Skill.valueOf(skillBars.get(finalI).getSkill().toUpperCase()).getCurrentLevel() >= tempGoal) {
+                            if (Skill.valueOf(progressIndicatorPane.getPB_Bar().getSkill().toUpperCase()).getCurrentLevel() >= tempGoal) {
                                 GameEvents.OSRS.LOGIN_HANDLER.disable();
                                 GameEvents.RS3.LOGIN_HANDLER.disable();
                                 GameEvents.OSRS.LOBBY_HANDLER.disable();
@@ -369,6 +301,127 @@ public class SkillTrackerPane {
                         e.printStackTrace();
                     }
                 }
+            }
+        }
+    }
+
+    private class ProgressIndicatorPane{
+
+        private Label LL_ExpAmount;
+        private Label LL_ExpHour;
+        private Label LL_TimeToNext;
+        private TextField TF_LvlGoal;
+        private Button BN_Remove;
+        private ProgressIndicatorBar PB_Bar;
+
+        public ProgressIndicatorPane(ProgressIndicatorBar PB_Bar, Label LL_ExpAmount, Label LL_ExpHour, Label LL_TimeToNext, TextField TF_LvlGoal, Button BN_Remove){
+            this.PB_Bar = PB_Bar;
+            this.LL_ExpAmount = LL_ExpAmount;
+            this.LL_ExpHour = LL_ExpHour;
+            this.LL_TimeToNext = LL_TimeToNext;
+            this.TF_LvlGoal = TF_LvlGoal;
+            this.BN_Remove = BN_Remove;
+        }
+
+        public ProgressIndicatorBar getPB_Bar(){
+            return PB_Bar;
+        }
+
+        public Label getLL_ExpAmount() {
+            return LL_ExpAmount;
+        }
+
+        public Label getLL_ExpHour() {
+            return LL_ExpHour;
+        }
+
+        public Label getLL_TimeToNext() {
+            return LL_TimeToNext;
+        }
+
+        public TextField getTF_LvlGoal() {
+            return TF_LvlGoal;
+        }
+
+        public Button getBN_Remove() {
+            return BN_Remove;
+        }
+
+        public void setPB_Bar(ProgressIndicatorBar PB_Bar) {
+            this.PB_Bar = PB_Bar;
+        }
+
+        public void setLL_ExpAmount(Label LL_ExpAmount) {
+            this.LL_ExpAmount = LL_ExpAmount;
+        }
+
+        public void setLL_ExpHour(Label LL_ExpHour) {
+            this.LL_ExpHour = LL_ExpHour;
+        }
+
+        public void setLL_TimeToNext(Label LL_TimeToNext) {
+            this.LL_TimeToNext = LL_TimeToNext;
+        }
+
+        public void setTF_LvlGoal(TextField TF_LvlGoal) {
+            this.TF_LvlGoal = TF_LvlGoal;
+        }
+
+        public void setBN_Remove(Button BN_Remove) {
+            this.BN_Remove = BN_Remove;
+        }
+    }
+
+    /**
+     * A ProgressIndicator Object that creates a ProgressBar and Label TitledPane
+     */
+    public class ProgressIndicatorBar extends StackPane {
+        final private int level;
+        final private String skillName;
+
+        final private ProgressBar bar = new ProgressBar();
+        final private Text text = new Text();
+
+        public ProgressIndicatorBar(final double progress, final String skillName, final int level, final int levelsGained) {
+            this.level = level;
+            this.skillName = skillName;
+
+            text.setFont(Font.font("comic sans", FontWeight.EXTRA_BOLD, 16));
+
+            String css = "-fx-accent rgb(" + ((double) 1 - progress) * 255 + ", " + progress * 255 + ", 0)";
+
+            bar.styleProperty().set(css);
+
+            bar.setMaxWidth(Double.MAX_VALUE); // allows the progress bar to expand to fill available horizontal space.
+
+            bar.setMinHeight(27);
+
+            getChildren().setAll(bar, text);
+
+            syncProgress(progress, level, levelsGained);
+        }
+
+        public String getSkill() {
+            return skillName;
+        }
+
+        public int getLevel() {
+            return level;
+        }
+
+        // synchronizes the progress indicated with the progress and levels passed in.
+        public void syncProgress(double progress, int level, int levelsGained) {
+            if (progress == 0) {
+                text.setText(skillName);
+
+                bar.setProgress(ProgressBar.INDETERMINATE_PROGRESS);
+            } else {
+                text.setText(skillName + " | Level: " + level + " | Levels Gained: " + levelsGained);
+
+                String css = "-fx-accent: rgb(" + ((double) 1 - progress) * 255 + ", " + progress * 255 + ", 0)";
+
+                bar.setProgress(progress);
+                bar.styleProperty().set(css);
             }
         }
     }
