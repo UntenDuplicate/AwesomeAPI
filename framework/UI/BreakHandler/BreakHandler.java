@@ -236,49 +236,6 @@ public class BreakHandler {
     /**
      * Created by Matthew on 11/18/2016.
      */
-
-
-    /*
-    In order to use this break handler, you must have a TitledPane in your UI
-    that is empty and create the following variables.
-     */
-
-    /*
-    Ex.
-
-    @FXML
-    private TitledPane TP_BreakHandler;
-
-    private final NameOfBot bot;
-    private BreakHandler breakHandlerClass = new BreakHandler();
-    private String userTime;
-    private LoopingThread loopingThread = new LoopingThread(() -> updateUI(), 500);
-
-    @Override
-    public void initialize(URL location, ResourceBundle resources) {
-        breakHandlerClass.createBreakHandler(TP_BreakHandler, bot);
-        loopingThread.start();
-    }
-
-    private void updateUI() {
-        bot.isBreaking = breakHandlerClass.isBreaking(bot.watch);
-
-        if(!(userTime = TF_StopTime.getText()).equals("00:00:00") && BreakHandler.checkValid(userTime) && BreakHandler.convertToMilli(userTime) > 0){
-            if(bot.watch.getRuntime() >= BreakHandler.convertToMilli(userTime)){
-                GameEvents.OSRS.LOGIN_HANDLER.disable();
-                GameEvents.RS3.LOGIN_HANDLER.disable();
-                GameEvents.OSRS.LOBBY_HANDLER.disable();
-                GameEvents.RS3.LOBBY_HANDLER.disable();
-                while(Environment.getBot().isRunning() && RuneScape.isLoggedIn() && RuneScape.logout()){
-                    Execution.delayUntil(() -> !RuneScape.isLoggedIn(), 10000);
-                }
-                Environment.getBot().stop();
-            }
-        }
-    }
-
-     */
-
     public static class BreakTracker {
 
         private final StringProperty startTime;

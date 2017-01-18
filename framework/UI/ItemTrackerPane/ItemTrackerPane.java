@@ -73,6 +73,7 @@ public class ItemTrackerPane {
         tableView.setPrefHeight(200);
 
         Separator separator = new Separator(Orientation.HORIZONTAL);
+
         VBox vBox = new VBox(tableView, separator, totalProfit);
         vBox.setAlignment(Pos.CENTER_RIGHT);
 
@@ -82,6 +83,8 @@ public class ItemTrackerPane {
     }
 
     public void refreshItems(ItemEvent event) {
+
+        //If it's adding an item
         if(event.getType().equals(ItemEvent.Type.ADDITION)) {
             ItemDefinition def;
             if ((def = event.getItem().getDefinition()) != null) {
@@ -123,6 +126,8 @@ public class ItemTrackerPane {
                 }
             }
         }
+
+        //If its removing an item
         else if(event.getType().equals(ItemEvent.Type.REMOVAL)){
             ItemDefinition def;
             if ((def = event.getItem().getDefinition()) != null) {

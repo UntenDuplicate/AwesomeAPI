@@ -4,17 +4,22 @@ import com.AwesomeAPI.framework.UI.BreakHandler.BreakHandler;
 import com.AwesomeAPI.framework.UI.CurrentTaskList.CurrentTaskList;
 import com.AwesomeAPI.framework.UI.ItemTrackerPane.ItemTrackerPane;
 import com.AwesomeAPI.framework.UI.SkillTrackerPane.SkillTrackerPane;
+import com.runemate.game.api.client.ClientUI;
 import com.runemate.game.api.hybrid.Environment;
 import com.runemate.game.api.hybrid.GameEvents;
 import com.runemate.game.api.hybrid.RuneScape;
+import com.runemate.game.api.hybrid.entities.Player;
+import com.runemate.game.api.hybrid.region.Players;
 import com.runemate.game.api.hybrid.util.Resources;
 import com.runemate.game.api.hybrid.util.StopWatch;
 import com.runemate.game.api.script.Execution;
 import com.runemate.game.api.script.framework.AbstractBot;
 import com.runemate.game.api.script.framework.core.LoopingThread;
+import com.runemate.game.api.script.framework.listeners.ChatboxListener;
 import com.runemate.game.api.script.framework.listeners.InventoryListener;
 import com.runemate.game.api.script.framework.listeners.SkillListener;
 import com.runemate.game.api.script.framework.listeners.events.ItemEvent;
+import com.runemate.game.api.script.framework.listeners.events.MessageEvent;
 import com.runemate.game.api.script.framework.listeners.events.SkillEvent;
 import javafx.application.Platform;
 import javafx.fxml.FXML;
@@ -36,13 +41,15 @@ import java.util.concurrent.TimeUnit;
  * Created by Matthew on 12/27/2016.
  * This Class is used to Create the Whole UI from my API with almost no extra stuff needed.
  */
-public class CreateUI extends VBox implements SkillListener, InventoryListener{
+public class CreateUI extends VBox implements SkillListener, InventoryListener, ChatboxListener{
+    private final AbstractBot bot;
     public CurrentTaskList currentTaskList;
     private BreakHandler breakHandler;
     private ItemTrackerPane itemTrackerPane;
     private SkillTrackerPane skillTrackerPane;
     private Future<InputStream> stream;
     private StopWatch bankTimer = new StopWatch();
+    private Player player;
 
     @FXML
     private Label LL_Version;
@@ -79,6 +86,7 @@ public class CreateUI extends VBox implements SkillListener, InventoryListener{
      * @param bot -> The bot
      */
     public CreateUI(AbstractBot bot) {
+        this.bot = bot;
 
         FXMLLoader loader = new FXMLLoader();
         loader.setController(this);
@@ -220,4 +228,17 @@ public class CreateUI extends VBox implements SkillListener, InventoryListener{
             itemTrackerPane.refreshItems(event);
     }
 
+
+    @Override
+    public void onMessageReceived(MessageEvent messageEvent) {
+        try {
+            if((player = bot.getPlatform().invokeAndWait(() -> Players.getLocal())) != null){
+                if(messageEvent.getMessage().contains(player.getName())){
+                    ClientUI.sendTrayNotification(messageEvent.getSender() + " Mentioned you.");
+                }
+            }
+        } catch (ExecutionException | InterruptedException e) {
+            e.printStackTrace();
+        }
+    }
 }
