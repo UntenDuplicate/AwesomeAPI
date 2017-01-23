@@ -177,8 +177,9 @@ public class SkillTrackerPane {
             Label LL_TimeToNext = new Label("0");
             Label LL_ExpGained = new Label(event.getChange() + "");
 
-            TextField TF_Goal = new TextField("0");
+            TextField TF_Goal = new TextField("Lvl #");
             TF_Goal.setPrefWidth(40);
+            TF_Goal.setAlignment(Pos.CENTER);
             TF_Goal.textProperty().addListener((observable, oldValue, newValue) -> {
                 watch.reset();
                 System.out.println("textfield changed from " + oldValue + " to " + newValue);
@@ -186,6 +187,8 @@ public class SkillTrackerPane {
             });
 
             Button BN_Remove = new Button("X");
+            BN_Remove.setFont(Font.font("comic sans", FontWeight.EXTRA_BOLD, 10));
+            BN_Remove.styleProperty().set("-fx-text-fill: rgb(62, 206, 110)");
             BN_Remove.setOnAction(deleteSkillTracker());
 
             HBox hbox = new HBox(new Label("Exp Gained: "), LL_ExpGained,
@@ -279,15 +282,12 @@ public class SkillTrackerPane {
             for (int i = 0; i < progressIndicatorPanes.size(); i++) {
 
                 if ((text = (progressIndicatorPane = progressIndicatorPanes.get(i)).getTF_LvlGoal().getText()).matches("^[1-9]\\d*$") && (tempGoal = Integer.parseInt(text)) > 0) {
-                    int finalI = i;
 
                     try {
                         bot.getPlatform().invokeAndWait(() -> {
                             if (Skill.valueOf(progressIndicatorPane.getPB_Bar().getSkill().toUpperCase()).getCurrentLevel() >= tempGoal) {
-                                GameEvents.OSRS.LOGIN_HANDLER.disable();
-                                GameEvents.RS3.LOGIN_HANDLER.disable();
-                                GameEvents.OSRS.LOBBY_HANDLER.disable();
-                                GameEvents.RS3.LOBBY_HANDLER.disable();
+                                GameEvents.Universal.LOGIN_HANDLER.disable();
+                                GameEvents.Universal.LOBBY_HANDLER.disable();
                                 while (Environment.getBot().isRunning() && RuneScape.isLoggedIn()) {
                                     if (RuneScape.logout()) {
                                         Execution.delayUntil(() -> !RuneScape.isLoggedIn(), 10000);

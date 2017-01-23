@@ -327,9 +327,11 @@ public class BreakHandler {
 
         BN_Save.setTooltip(new Tooltip("You must enter a name \n to save in case you didn't."));
 
-        TextField TF_ProfName = new TextField();
+        TextField TF_ProfName = new TextField("Profile Name");
 
         Separator separator1 = new Separator(Orientation.VERTICAL);
+        separator.setVisible(false);
+        separator1.setVisible(false);
         separator1.setPrefWidth(200);
 
         Button BN_Generate = new Button("Generate");
@@ -337,7 +339,9 @@ public class BreakHandler {
         Button BN_Clear = new Button("Clear");
 
         Separator separator2 = new Separator(Orientation.VERTICAL);
+        separator2.setVisible(false);
         Separator separator3 = new Separator(Orientation.VERTICAL);
+        separator3.setVisible(false);
 
         HBox hBox1 = new HBox(BN_Save, separator2, TF_ProfName, separator1, BN_Generate, separator3, BN_Clear);
         hBox1.setAlignment(Pos.CENTER);
@@ -347,10 +351,12 @@ public class BreakHandler {
         BN_Load.setTooltip(new Tooltip("You must select a previous break name \n before you can click load just so you know."));
 
         Separator separator4 = new Separator(Orientation.VERTICAL);
+        separator4.setVisible(false);
 
         ComboBox<String> CB_Prof = new ComboBox<>();
 
         Separator separator5 = new Separator(Orientation.VERTICAL);
+        separator5.setVisible(false);
 
         Button BN_Delete = new Button("Delete");
 

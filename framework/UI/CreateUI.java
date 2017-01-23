@@ -80,6 +80,7 @@ public class CreateUI extends VBox implements SkillListener, InventoryListener, 
 
     @FXML
     private TitledPane TP_Currently;
+    private String tempMess;
 
     /**
      * Creates all the UI parts and now Handles the skill Listeners and inventory
@@ -87,6 +88,12 @@ public class CreateUI extends VBox implements SkillListener, InventoryListener, 
      */
     public CreateUI(AbstractBot bot) {
         this.bot = bot;
+
+        try {
+            bot.getPlatform().invokeAndWait(() -> GameEvents.InactivityShutdownFailsafe.setInactivityTimeout(120000));
+        } catch (ExecutionException | InterruptedException e) {
+            e.printStackTrace();
+        }
 
         FXMLLoader loader = new FXMLLoader();
         loader.setController(this);
@@ -155,7 +162,7 @@ public class CreateUI extends VBox implements SkillListener, InventoryListener, 
     }
 
     public void setRuntime(String runtime) {
-        LL_Runtime.setText(runtime);
+        Platform.runLater(() -> LL_Runtime.setText(runtime));
     }
 
     public TextField getStopTime() {
@@ -191,10 +198,8 @@ public class CreateUI extends VBox implements SkillListener, InventoryListener, 
     }
 
     public void stopBot() {
-        GameEvents.OSRS.LOGIN_HANDLER.disable();
-        GameEvents.RS3.LOGIN_HANDLER.disable();
-        GameEvents.OSRS.LOBBY_HANDLER.disable();
-        GameEvents.RS3.LOBBY_HANDLER.disable();
+        GameEvents.Universal.LOGIN_HANDLER.disable();
+        GameEvents.Universal.LOBBY_HANDLER.disable();
         while (Environment.getBot().isRunning() && RuneScape.isLoggedIn() && RuneScape.logout()) {
             Execution.delayUntil(() -> !RuneScape.isLoggedIn(), 10000);
         }
@@ -231,10 +236,13 @@ public class CreateUI extends VBox implements SkillListener, InventoryListener, 
 
     @Override
     public void onMessageReceived(MessageEvent messageEvent) {
+        String name;
         try {
             if((player = bot.getPlatform().invokeAndWait(() -> Players.getLocal())) != null){
-                if(messageEvent.getMessage().contains(player.getName())){
-                    ClientUI.sendTrayNotification(messageEvent.getSender() + " Mentioned you.");
+                if((name = player.getName()) != null) {
+                    if ((tempMess = messageEvent.getMessage()) != null && tempMess.contains(name)) {
+                        ClientUI.sendTrayNotification(messageEvent.getSender() + " Mentioned you.");
+                    }
                 }
             }
         } catch (ExecutionException | InterruptedException e) {
